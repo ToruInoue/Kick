@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/2/trunk/src/com/google/appengine/demos/dda/client/channel
+END
+ChannelFactory.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/!svn/ver/2/trunk/src/com/google/appengine/demos/dda/client/channel/ChannelFactory.java
+END
+Socket.java
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/2/trunk/src/com/google/appengine/demos/dda/client/channel/Socket.java
+END
+Channel.java
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/2/trunk/src/com/google/appengine/demos/dda/client/channel/Channel.java
+END
+SocketListener.java
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/!svn/ver/2/trunk/src/com/google/appengine/demos/dda/client/channel/SocketListener.java
+END

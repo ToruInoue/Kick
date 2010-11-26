@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module rename-to='kick'>
+  <!-- Inherit the core Web Toolkit stuff.                        -->
+  <inherits name='com.google.gwt.user.User'/>
+
+  <!-- Inherit the default GWT style sheet.  You can change       -->
+  <!-- the theme of your GWT application by uncommenting          -->
+  <!-- any one of the following lines.                            -->
+  <inherits name='com.google.gwt.user.theme.standard.Standard'/>
+  <!-- <inherits name='com.google.gwt.user.theme.chrome.Chrome'/> -->
+  <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
+
+  <!-- Other module inherits                                      -->
+
+	<inherits name='com.google.gwt.widgetideas.GWTCanvas'/>
+ 	<!-- inherits name='org.gwt_websocketrpc.Gwt_websocketrpc' / -->
+ 	
+ 	
+ 	<script src="/script/processing-0.8.min.js"></script>
+ 	
+ 	<script src="/_ah/channel/jsapi"></script>
+ 	 
+ 	
+  <!-- Specify the app entry point class.                         -->
+  <entry-point class='com.kissaki.client.Kick'/>
+
+  <!-- Specify the paths for translatable code                    -->
+  <source path='client'/>
+  <source path='shared'/>
+
+</module>
