@@ -8,5 +8,6 @@
 	<classpathentry kind="lib" path="include/gwt-incubator-20100204-r1747.jar"/>
 	<classpathentry kind="lib" path="include/gwt-websocketrpc-servlet.jar"/>
 	<classpathentry kind="lib" path="include/gwt-websocketrpc.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>

@@ -246,10 +246,10 @@ public class  ProcessingImplements implements ProcessingInterface {
 		this.@com.kissaki.client.ProcessingImplements::getInstanceOfJSObject()().loop();
 	}-*/;
 	
-	public void frameRate(JavaScriptObject aRate){
+	public void frameRate(String aRate){
 		_frameRate(aRate);
 	}
-	private native JavaScriptObject _frameRate(JavaScriptObject aRate)/*-{
+	private native JavaScriptObject _frameRate(String aRate)/*-{
 		this.@com.kissaki.client.ProcessingImplements::getInstanceOfJSObject()().frameRate(aRate);
 	}-*/;
 	

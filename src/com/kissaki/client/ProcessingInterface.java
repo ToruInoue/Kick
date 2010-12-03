@@ -70,7 +70,7 @@ public interface ProcessingInterface{
 	
 	public void loop();
 	
-	public void frameRate(JavaScriptObject aRate);
+	public void frameRate(String aRate);
 	
 	public void cursor();
 	

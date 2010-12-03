@@ -14,34 +14,34 @@ import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 public class GreetingServiceImpl extends RemoteServiceServlet implements
 		GreetingService {
 	int count = 0;
+	
+	
 	Channel channel = new Channel();
 	
-	static String MSTERKEY = "master";
+	
+	static String MASTERKEY = "master";
+	String channelId = MASTERKEY;
 	
 	public String greetServer(String input) throws IllegalArgumentException {
 
 		if (input.equals("100")) {
-			String channelId = MSTERKEY;
-	        return channel.getChannel(channelId);
+			
+	        return channel.getChannel(channelId);//Channelキーを返却
 		}
 		
 		if (input.equals("200")) {
-			sendMessage(""+count++);	
+			
+			if (count % 2 == 0) {
+				channel.sendMessage(channelId, ""+count);	
+			} else {
+				channel.sendMessage(channelId, "Go");	
+			}
+			count++;
 		}
 		
-		return "default";
+		return "default";//HTTP_OKキーを返せばいい
 	}
 
-	public void sendMessage(String msg) {
-		String encodedMessage = msg;
-		getChannelService().sendMessage(new ChannelMessage(MSTERKEY, encodedMessage));	
-	}
+
 	
-
-	private static ChannelService getChannelService() {
-		// NB: This is really cheap, but if it became expensive, we could stuff
-		// it in a thread local.
-		return ChannelServiceFactory.getChannelService();
-	}
-
 }
