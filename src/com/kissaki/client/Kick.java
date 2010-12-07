@@ -5,24 +5,11 @@ import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
-import com.kissaki.shared.FieldVerifier;
+
+
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyCodes;
-import com.google.gwt.event.dom.client.KeyUpEvent;
-import com.google.gwt.event.dom.client.KeyUpHandler;
-import com.google.gwt.user.client.Random;
 import com.google.gwt.user.client.rpc.AsyncCallback;
-import com.google.gwt.user.client.rpc.SerializationStreamReader;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.HTML;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.RootPanel;
-import com.google.gwt.user.client.ui.TextBox;
-import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.widgetideas.graphics.client.Color;
 import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
 
@@ -31,8 +18,9 @@ import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
  */
 public class Kick implements EntryPoint {
 	Debug debug;
-	ProcessingImplements p2;
+	ProcessingImplements p;
 
+	KickController kCont;
 	/**
 	 * The message displayed to the user when the server cannot be reached or
 	 * returns an error.
@@ -52,29 +40,35 @@ public class Kick implements EntryPoint {
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() {
+		
+		if (true) {
+			kCont = new KickController();
+			return;
+		}
+		
 		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
 		canvas.setBackgroundColor(new Color(0, 0, 0, 0.5f));
 
 
-		new ScreenEventRegister(canvas);
+		ScreenEventRegister reg = new ScreenEventRegister(canvas);
 
 		debug = new Debug(this);
 
-		ProcessingImplements p = new ProcessingImplements(canvas.getElement(), "");
+		p = new ProcessingImplements(canvas.getElement(), "");
 		p.size("600","280","");
 
 		p.background(100);
 		p.ellipse("10", "100", "40", "40");
-
-
-		//上書きできるw
-		p2 = new ProcessingImplements(canvas.getElement(), "");
-		p2.size("100","100", "");
-		p2.ellipse("50", "40", "50", "50");
-
-		//ログイン
+		
+		
+//		//上書きできるw
+//		p2 = new ProcessingImplements(canvas.getElement(), "");
+//		p2.size("100","100", "");
+//		p2.ellipse("50", "40", "50", "50");
+//
+//		//ログイン
 		iAm = "p_"+System.currentTimeMillis();
-		p2.init("");//あれ、引数がある、、、
+//		p2.init("");//あれ、引数がある、、、
 
 		//ログイン後の入力処理
 		greetingService.greetServer("100",
@@ -132,7 +126,7 @@ public class Kick implements EntryPoint {
 				debug.trace("len_"+encodedData.length());
 				if (encodedData.length() == 16) {//条件分けできねえ。なんでだ。オブジェクトではない、とかなのか。encodeの問題なのか。→末尾にnullが含まれてる何かだ。。。。うーーん、、、　decodeEncodeが必須なわけだ。
 					debug.trace("届いてるんですよー");
-					p2.ellipse("100", "100", "10", "10");//リロードがかかればいいのだけれど、そうで無い場合は、どうすればいいかな。
+					p.ellipse("100", "100", "10", "10");//リロードがかかればいいのだけれど、そうで無い場合は、どうすればいいかな。
 				}
 				
 				greetingService.greetServer("300",

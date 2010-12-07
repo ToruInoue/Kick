@@ -27,5 +27,10 @@
   <!-- Specify the paths for translatable code                    -->
   <source path='client'/>
   <source path='shared'/>
+  <inherits name="com.kissaki.Kick"/>
+  <inherits name="com.kissaki.Kick"/>
+  <inherits name="com.kissaki.Kick"/>
+  <inherits name="com.kissaki.Kick"/>
+  <inherits name="com.kissaki.Kick"/>
 
 </module>

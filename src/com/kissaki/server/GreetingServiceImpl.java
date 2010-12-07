@@ -39,6 +39,27 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 			count++;
 		}
 		
+		
+		
+		
+		
+		
+		//ログイン
+		if (input.startsWith("userLogin+")) {
+			//ユーザー名とパスワードが送られてきていれば、そのまま。
+			System.out.println("input_"+input);
+			return channel.getChannel(channelId);//Channelキーを返却
+		}
+		
+		
+		if (input.startsWith("getItemData+")) {
+//			アイテムデータをPushで返す
+			
+			channel.sendMessage(channelId, "コレでも食らいやがれ");
+			
+			return "ok";
+		}
+		
 		return "default";//HTTP_OKキーを返せばいい
 	}
 

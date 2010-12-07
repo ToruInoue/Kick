@@ -21,7 +21,7 @@ public class ScreenHandler implements EventHandler {
 	 * @param widget
 	 */
 	public void addToMain (Widget widget) {
-		ScreenController screenController = ScreenController.getScreenController();
+		ScreenController screenController = ScreenController.getScreenController();//
 		screenController.setMainScreen(widget);
 	}
 	

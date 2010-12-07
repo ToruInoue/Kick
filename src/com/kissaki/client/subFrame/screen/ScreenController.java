@@ -7,6 +7,8 @@ import com.google.gwt.user.client.ui.Widget;
 import com.kissaki.client.subFrame.debug.Debug;
 
 /**
+ * Duplicate予定：Ginでの実装に切り替える。 10/12/03 19:27:17
+ * 
  * シングルトンを実装した、スクリーンコントローラ。
  * シングルトンが積まれているので、アクセスに関しては常にステートマシンのように扱うこと。
  * 
@@ -35,7 +37,7 @@ public class ScreenController {
 	Debug debug = null;
 //	RootpanelPresentator panel = null;
 //	PanelComposite_Dock panel = null;
-	PanelComposite_Simple panel = null;
+	static PanelComposite_Simple panel = null;
 	
 	private static ScreenController screenController = new ScreenController();//シングルトン、ステートマシンとして扱う
 
@@ -47,9 +49,21 @@ public class ScreenController {
 		debug.removeTraceSetting(Debug.DEBUG_EVENT_ON);//このクラスでは、デバッグをイベント表示しない。
 		
 		panel = new PanelComposite_Simple();
-		RootLayoutPanel.get().add(panel);
+		RootLayoutPanel.get().add(panel);//要素をつけるならココなのか。
+		
+		
 	}
 	
+	public static void removeAllElements () {
+		int num = RootLayoutPanel.get().getWidgetCount();
+		
+		for (int i = 0; i < num; i++) {
+			RootLayoutPanel.get().remove(0);//かなあ、、、
+		}
+		
+		panel = new PanelComposite_Simple();
+		RootLayoutPanel.get().add(panel);//要素をつけるならココなのか。
+	}
 	
 	/**
 	 * このクラスのインスタンスのゲッター
@@ -61,14 +75,16 @@ public class ScreenController {
 	
 	
 	/**
-	 * メインにセットする
+	 * メインにセットする、、この書き方は出来ない訳だな。
 	 * @param w
 	 */
 	public void setMainScreen (Widget w) {
+		removeAllElements();
 		panel.setToMainPanel(w);
 	}
 	
 	public void setSubScreen (Widget w) {
+//		panel = new PanelComposite_Simple();//初期化したら、どうなる？
 		panel.setToSubPanel(w);	
 	}
 	

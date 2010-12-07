@@ -12,6 +12,8 @@ public class ScreenEventRegister extends SimpleEventBus {
 
 	/**
 	 * コンストラクタ
+	 * 起動した瞬間に、イベントを発生させる。
+	 * あんまりいい構造じゃないな。わかりにくい。。
 	 * @param w
 	 */
 	public ScreenEventRegister(Widget w) {

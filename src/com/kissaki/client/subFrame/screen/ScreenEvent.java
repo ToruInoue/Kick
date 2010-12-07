@@ -27,7 +27,7 @@ public class ScreenEvent extends GwtEvent<ScreenHandler> {
 	 */
 	public ScreenEvent (int num, Widget w) {
 		debug = new Debug(this);
-		debug.trace("コンストラクタ");
+		debug.trace("ScreenEvent_コンストラクタ");
 		setWidget(w);
 		setNum(num);
 	}
@@ -71,6 +71,9 @@ public class ScreenEvent extends GwtEvent<ScreenHandler> {
 	
 	/**
 	 * 実際の挙動
+	 * 
+	 * 定義した要素が、イベント適応しているオブジェクトに対して呼ばれる構造。
+	 * リスナを積めば動く、という事ですね。資料にしよう。
 	 */
 	@Override
 	protected void dispatch(ScreenHandler handler) {
@@ -81,7 +84,7 @@ public class ScreenEvent extends GwtEvent<ScreenHandler> {
 			break;
 		
 		case 1:
-			debug.trace("dispatch_"+1);
+			debug.trace("dispatch_"+1);//ここで駄目になってるから、handlerの処理か。ということは、受ける側のリセットが無いからか？
 			handler.addToMain(getWidget());
 			break;
 			
