@@ -1,5 +1,8 @@
 package com.kissaki.client;
 
+import com.google.gwt.junit.client.GWTTestCase;
+import com.kissaki.client.subFrame.debug.Debug;
+
 
 /**
  * テストを書く。
@@ -18,6 +21,32 @@ package com.kissaki.client;
  * @author ToruInoue
  *
  */
-public class TestLogin {
+public class TestLogin extends GWTTestCase {
+	Debug debug;
+//	KickController kCont;
+	
+	@Override
+	public String getModuleName() {
+		return "com.kissaki.Kick";
+	}
+	
+	public void gwtSetUp () {
+		debug = new Debug(this);
+		debug.trace("LoginTestStart");
+		
+//		Kick kick = new Kick();
+//		kick.onModuleLoad();
+//		hello = new Hello();
+//	    hello.onModuleLoad();
+		//kCont = new KickController();
+	}
+	
+	public void gwtTearDown () {
+		
+	}
+	
+	public void testTest () {
+		debug.trace("通過");
+	}
 	
 }

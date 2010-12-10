@@ -8,7 +8,7 @@ public class UserStatusController {
 	int m_userStatus;
 	String m_userName = "";
 	String m_userPass = "";
-	
+	String m_userKey = "";
 	
 	public final static int STATUS_USER_LOGOUT = -1;
 	public final static int STATUS_USER_LOGGING = 0;
@@ -49,5 +49,16 @@ public class UserStatusController {
 	}
 	public void setUserPass(String  pass) {
 		m_userPass = pass;
+	}
+
+	/**
+	 * ユーザーのキーを取得する。
+	 * @return
+	 */
+	public String getUserKey() {
+		return m_userKey;
+	}
+	public void setUserKey(String key) {
+		m_userKey = key;
 	}
 }

@@ -6,6 +6,7 @@
   <!-- Inherit the default GWT style sheet.  You can change       -->
   <!-- the theme of your GWT application by uncommenting          -->
   <!-- any one of the following lines.                            -->
+  
   <inherits name='com.google.gwt.user.theme.standard.Standard'/>
   <!-- <inherits name='com.google.gwt.user.theme.chrome.Chrome'/> -->
   <!-- <inherits name='com.google.gwt.user.theme.dark.Dark'/>     -->
@@ -13,8 +14,6 @@
   <!-- Other module inherits                                      -->
 
 	<inherits name='com.google.gwt.widgetideas.GWTCanvas'/>
- 	<!-- inherits name='org.gwt_websocketrpc.Gwt_websocketrpc' / -->
- 	
  	
  	<script src="/script/processing-0.8.min.js"></script>
  	
@@ -32,5 +31,10 @@
   <inherits name="com.kissaki.Kick"/>
   <inherits name="com.kissaki.Kick"/>
   <inherits name="com.kissaki.Kick"/>
+  <inherits name="com.google.gwt.json.JSON"/>
+  <inherits name="com.google.gwt.json.JSON"/>
+  <inherits name="com.google.gwt.junit.JUnit"/>
+  <inherits name="com.google.gwt.junit.JUnit"/>
+  <inherits name="com.google.gwt.junit.JUnit"/>
 
 </module>

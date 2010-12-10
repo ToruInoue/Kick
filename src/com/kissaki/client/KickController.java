@@ -7,6 +7,12 @@ import java.util.List;//list
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.UmbrellaException;
+import com.google.gwt.json.client.JSONArray;
+import com.google.gwt.json.client.JSONNumber;
+import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
+import com.google.gwt.json.client.JSONString;
+import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
 import com.kissaki.client.channel.Channel;
@@ -60,8 +66,15 @@ public class KickController {
 	
 	public KickController () {
 		debug = new Debug(this);
-		
+		debug.trace("コンストラクタに到達");
 		uStCont = new UserStatusController();//Ginから取得出来るといいな。
+		
+		if (false) {
+			/*{"channelID":"channel-m2fdj8-master","userData":{"itemKeys":[],"key":{"complete":true,"id":0,"kind":"user","name":"test@test","namespace":"","parent":null},"m_userName":"test","m_userPass":"test","m_userStatus":0}}
+			 */
+			String jsonString = "{\"channelID\":\"channel-m2fdj8-master\",\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}}";
+			parseJsonString(jsonString);
+		}
 		
 		debug.trace("status_"+uStCont.getUserStatus());
 		debug.trace("name_"+uStCont.getUserName());
@@ -168,8 +181,16 @@ public class KickController {
 
 					public void onSuccess(String result) {
 						debug.trace("onSuccess_result_"+result);
-						setKickStatus(STATUS_KICK_LOGIN_SUCCEEDED);
-						procedure("Channel_Open:"+result);
+						if (result.matches("ログインパスワードが違います")) {//やりなおし
+							setKickStatus(STATUS_KICK_LOGIN_INIT);
+							procedure("");
+						} else {
+							setKickStatus(STATUS_KICK_LOGIN_SUCCEEDED);
+							procedure("Channel_Open:"+result);
+						}
+						
+						
+						
 					}
 				}
 				);
@@ -184,33 +205,28 @@ public class KickController {
 			 */
 		case STATUS_KICK_LOGIN_SUCCEEDED:
 			if (exec.startsWith("Channel_Open:")) {
-				debug.trace("status_"+uStCont.getUserStatus());
+				String jsonString = exec.subSequence("Channel_Open:".length(), exec.length()).toString();
 				
-				debug.trace("name_"+uStCont.getUserName());
-				debug.trace("password_"+uStCont.getUserPass());
+				setUpUserKey(jsonString);
 				
-				uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
 				
-				setKickStatus(STATUS_KICK_EXEC_INIT);
-				
-				String channelPass = exec.subSequence("Channel_Open:".length(), exec.length()).toString();
-				
-				//チャンネルがいつ開くかわからないので、Channelの接続をここから行う
-				setChannelID(channelPass);
 				
 				//画面の片付けとかも行う。
+				
+				//ここで遷移がぶっちぎれて、Channelだよりになる。
 			}
 			break;
 			
-			
+			/*
+			 * channel接続が通った状態
+			 */
 		case STATUS_KICK_EXEC_INIT:
 			
 			setKickStatus(STATUS_KICK_EXEC_PROC);
 			
-			//アイテムデータ、それに紐づくデータの取得を行う
-			String nameWithPass = uStCont.getUserName()+":"+uStCont.getUserPass();
+			//ユーザーのキーでいろいろやる
 			
-			greetingService.greetServer("getItemData+"+nameWithPass+"",
+			greetingService.greetServer("getItemData+"+uStCont.getUserKey(),
 					new AsyncCallback<String>() {
 				public void onFailure(Throwable caught) {
 					debug.trace("failure");
@@ -260,6 +276,184 @@ public class KickController {
 	
 	
 	/**
+	 * ユーザーデータのユーザーキーを設定する。
+	 * @param jsonString
+	 */
+	private void setUpUserKey(String jsonString) {
+		
+		/*
+		 * ユーザーのキーを取得する
+		 */
+		JSONObject root = null;
+		JSONObject userData = null;
+		JSONArray userItemArray = null;
+		JSONString channelID = null;
+		
+		
+		if (JSONParser.parseStrict(jsonString).isObject() != null) {
+			root = JSONParser.parseStrict(jsonString).isObject();
+		}
+		
+		if (root != null) {
+			if (root.get("channelID").isString() != null) {
+				channelID = root.get("channelID").isString();
+				debug.trace("channelID_"+channelID);
+			}
+			
+			if (root.get("userData").isObject() != null) {
+				userData = root.get("userData").isObject();
+			}
+		}
+		
+		if (userData != null) {
+			if (userData.get("itemKeys").isArray() != null) {
+				userItemArray = userData.get("itemKeys").isArray();
+				debug.trace("size_"+userItemArray.size());
+			}
+			
+			if (userData.get("key").isObject() != null) {
+				JSONObject key = userData.get("key").isObject();
+				debug.trace("key_"+key);
+				uStCont.setUserKey(key.toString());
+				
+				/*
+				 * 適当に登録する
+				 */
+//				greetingService.greetServer("setItemData+"+key,
+//						new AsyncCallback<String>() {
+//					public void onFailure(Throwable caught) {
+//						debug.trace("failure");
+//					}
+//	
+//					public void onSuccess(String result) {
+//						debug.trace("setItemData+success!_"+result);
+//					}
+//				}
+//				);
+			}
+		}
+		/*
+		 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
+		 */
+		debug.trace("status_"+uStCont.getUserStatus());
+		debug.trace("name_"+uStCont.getUserName());
+		debug.trace("password_"+uStCont.getUserPass());
+		
+		uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
+		
+		setKickStatus(STATUS_KICK_EXEC_INIT);
+		
+		try {
+			setChannelID(channelID.toString());
+		}catch (Exception e) {
+			debug.trace("error_"+e);
+		}
+		/*
+		 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
+		 */
+		//if (userItemArray != null) setUpUserItemRequest(userItemArray);
+	}
+
+	/**
+	 * アイテムリクエストをJsonStringから読み出し行う。
+	 * @param jsonString
+	 */
+	private void setUpUserItemRequest(JSONArray userItemArray) {
+
+		//ここでアレイとして保存しておく。
+
+		int size = userItemArray.size();
+		for (int i = 0; i < size; i++) {
+			JSONObject key = userItemArray.get(i).isObject();
+			
+//			//このIDについて、リクエストを投げる。
+//			greetingService.greetServer("getItemData+"+key,
+//					new AsyncCallback<String>() {
+//				public void onFailure(Throwable caught) {
+//					debug.trace("failure");
+//				}
+//
+//				public void onSuccess(String result) {
+//					debug.trace("success!_"+result);
+//					procedure("アイテム+_"+result+"_取得開始");
+//				}
+//			}
+//			);
+		}
+
+	}
+	
+	
+	/**
+	 * テストしましょう。
+	 * @param jsonString
+	 */
+	public void parseJsonString(String jsonString) {
+		
+		/**
+		 * "{\"channelID\":\"channel-m2fdj8-master\",
+		 * \"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}}";
+//コレも、オブジェクト扱いらしい。
+\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}
+		 */
+		
+		//アイテム一覧のアレイがあるので、取得する
+		if (JSONParser.parseStrict(jsonString).isArray() != null) {
+			debug.trace("アレイがあるみたいです");
+		}
+		if (JSONParser.parseStrict(jsonString).isBoolean() != null) {
+			debug.trace("ブーリアン？");
+		}
+		
+		/**
+		 * うーーん、パース部分が肥大化するよう。しょうがないのかよう。
+		 */
+		if (JSONParser.parseStrict(jsonString).isObject() != null) {
+			debug.trace("オブジェクト？");
+			
+			JSONObject obj = JSONParser.parseStrict(jsonString).isObject();
+			debug.trace("もらた");
+			
+
+			
+			JSONValue v = obj.get("channelID");
+			debug.trace("channelID_"+v);
+			
+			if (obj.get("userData").isArray() != null) {
+				debug.trace("配列としてゲット出来るようだ");
+			}
+			if (obj.get("userData").isString() != null) {
+				debug.trace("文字列");
+			}
+			if (obj.get("userData").isObject() != null) {
+				//\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}
+				debug.trace("Objとして");
+				JSONObject obj2 = obj.get("userData").isObject();
+				if (obj2.get("itemKeys").isArray() != null) {
+					debug.trace("[]表記ならば配列らしい");
+					JSONArray a = obj2.get("itemKeys").isArray();
+					debug.trace("size_"+a.size());
+				}
+				if (obj2.get("m_userStatus").isObject() != null) {//値が存在して初めて読める。こう書くしかないのか。
+					debug.trace("オブジェクトだよ");
+					JSONNumber status = obj2.get("m_userStatus").isNumber();
+					debug.trace("status_"+status);
+				}
+			}
+//			JSONArray array = obj.get("userData").isArray();
+//			debug.trace("array_"+array);
+			
+			
+		}
+		if (JSONParser.parseStrict(jsonString).isString() != null) {
+			debug.trace("ストリング？");
+		}
+		debug.trace("チェック完了");
+		
+		
+	}
+
+	/**
 	 * channelAPIが開いたので、ユーザーにキーを返す
 	 * @param result
 	 */
@@ -268,6 +462,7 @@ public class KickController {
 		 * 取得したキーでチャンネルを開く
 		 */
 		Channel channel = ChannelFactory.createChannel(result);
+		debug.trace("result_"+result);
 		
 		/**
 		 * 接続ハンドラ
@@ -278,14 +473,14 @@ public class KickController {
 				debug.trace(uStCont.getUserName()+"_channel 開きました");
 				procedure("");
 			}
-
-
+			
 			public void onMessage(String encodedData) {
-				debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);//改行コードが入ってる。
+				debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);
 				procedure("encodedData:"+encodedData);
 			}
 			
 		});
+		
 	}
 
 	
@@ -325,7 +520,7 @@ public class KickController {
 	 */
 	public void login(String name, String pass) {
 		inputUserName(name);
-		inputUserPass(name);
+		inputUserPass(pass);
 		
 		procedure("login実行");
 	}

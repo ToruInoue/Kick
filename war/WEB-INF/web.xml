@@ -4,7 +4,6 @@
     "http://java.sun.com/dtd/web-app_2_3.dtd">
 
 <web-app>
-  
   <!-- Servlets -->
   <servlet>
     <servlet-name>greetServlet</servlet-name>
@@ -20,5 +19,16 @@
   <welcome-file-list>
     <welcome-file>Kick.html</welcome-file>
   </welcome-file-list>
+<filter>
+	<filter-name>datastoreFilter</filter-name>
+	<filter-class>org.slim3.datastore.DatastoreFilter</filter-class>
+</filter>
+
+<filter-mapping>
+	<filter-name>datastoreFilter</filter-name>
+	<url-pattern>/*</url-pattern>
+	<dispatcher>REQUEST</dispatcher>
+</filter-mapping>
 
 </web-app>
+

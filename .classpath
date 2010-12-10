@@ -1,13 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="src" path=".apt_generated">
+		<attributes>
+			<attribute name="optional" value="true"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry excluding="com/kissaki/cilent/kickController/" kind="src" path="src"/>
 	<classpathentry kind="src" output="test-classes" path="test"/>
 	<classpathentry kind="con" path="com.google.appengine.eclipse.core.GAE_CONTAINER"/>
 	<classpathentry kind="con" path="com.google.gwt.eclipse.core.GWT_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="include/gwt-incubator-20100204-r1747.jar"/>
-	<classpathentry kind="lib" path="include/gwt-websocketrpc-servlet.jar"/>
-	<classpathentry kind="lib" path="include/gwt-websocketrpc.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/slim3-1.0.5.jar"/>
+	<classpathentry kind="lib" path="war/WEB-INF/lib/jsonic-1.2.4.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
 	<classpathentry kind="output" path="war/WEB-INF/classes"/>
 </classpath>
