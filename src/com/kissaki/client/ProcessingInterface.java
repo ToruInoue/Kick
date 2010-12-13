@@ -6,67 +6,67 @@ public interface ProcessingInterface{
 	
 	
 	
-	public void Processing(JavaScriptObject aElement, String aCode);
+	public void Processing(String aElement, String aCode);
 	
-	public void parse(JavaScriptObject aCode, String p);
+	public void parse(String aCode, String p);
 	
-	public void imageModeCorner(JavaScriptObject x, JavaScriptObject y, JavaScriptObject w, JavaScriptObject h, JavaScriptObject whAreSizes);
+	public void imageModeCorner(String x, String y, String w, String h, String whAreSizes);
 	
-	public void imageModeCorners(JavaScriptObject x, JavaScriptObject y, JavaScriptObject w, JavaScriptObject h, JavaScriptObject whAreSizes);
+	public void imageModeCorners(String x, String y, String w, String h, String whAreSizes);
 	
-	public void imageModeCenter(JavaScriptObject x, JavaScriptObject y, JavaScriptObject w, JavaScriptObject h, JavaScriptObject whAreSizes);
+	public void imageModeCenter(String x, String y, String w, String h, String whAreSizes);
 	
 	public void buildProcessing(String curElement);
 	
 	public void Char(String chr);
 	
-	public void printMatrixHelper(JavaScriptObject elements);
+	public void printMatrixHelper(String elements);
 	
 	public void load();
 	
-	public void load(JavaScriptObject loadOverloaded_0, JavaScriptObject loadOverloaded_1);
+	public void load(String loadOverloaded_0, String loadOverloaded_1);
 	
-	public void load(JavaScriptObject loadOverloaded_0);
+	public void load(String loadOverloaded_0);
 	
-	public void mult(JavaScriptObject matrix);
+	public void mult(String matrix);
 	
-	public void virtHashCode(JavaScriptObject obj);
+	public void virtHashCode(String obj);
 	
-	public void virtEquals(JavaScriptObject obj, JavaScriptObject other);
+	public void virtEquals(String obj, String other);
 	
 	public void HashMap();
 	
-	public void HashMap(JavaScriptObject HashMapOverloaded_0, JavaScriptObject HashMapOverloaded_1);
+	public void HashMap(String HashMapOverloaded_0, String HashMapOverloaded_1);
 	
-	public void HashMap(JavaScriptObject HashMapOverloaded_0);
+	public void HashMap(String HashMapOverloaded_0);
 	
 	public void Iterator(String conversion, String removeItem);
 	
-	public void Set(JavaScriptObject conversion, JavaScriptObject isIn, JavaScriptObject removeItem);
+	public void Set(String conversion, String isIn, String removeItem);
 	
-	public void Entry(JavaScriptObject pair);
+	public void Entry(String pair);
 	
-	public void color(JavaScriptObject aValue1, JavaScriptObject aValue2, JavaScriptObject aValue3, JavaScriptObject aValue4);
+	public void color(String aValue1, String aValue2, String aValue3, String aValue4);
 	
-	public void verifyChannel(JavaScriptObject aColor);
+	public void verifyChannel(String aColor);
 	
-	public void lerpColor(JavaScriptObject c1, JavaScriptObject c2, JavaScriptObject amt);
+	public void lerpColor(String c1, String c2, String amt);
 	
 	public void colorMode(String mode, String range1, String range2, String range3, String range4);
 	
-	public void colorMode(JavaScriptObject colorModeOverloaded_0, JavaScriptObject colorModeOverloaded_1, JavaScriptObject colorModeOverloaded_2, JavaScriptObject colorModeOverloaded_3, JavaScriptObject colorModeOverloaded_4, JavaScriptObject colorModeOverloaded_5);
+	public void colorMode(String colorModeOverloaded_0, String colorModeOverloaded_1, String colorModeOverloaded_2, String colorModeOverloaded_3, String colorModeOverloaded_4, String colorModeOverloaded_5);
 	
-	public void colorMode(JavaScriptObject colorModeOverloaded_0, JavaScriptObject colorModeOverloaded_1, JavaScriptObject colorModeOverloaded_2);
+	public void colorMode(String colorModeOverloaded_0, String colorModeOverloaded_1, String colorModeOverloaded_2);
 	
-	public void translate(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void translate(String x, String y, String z);
 	
-	public void scale(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void scale(String x, String y, String z);
 	
 	public void applyMatrix();
 	
-	public void applyMatrix(JavaScriptObject applyMatrixOverloaded_0);
+	public void applyMatrix(String applyMatrixOverloaded_0);
 	
-	public void rotate(JavaScriptObject angleInRadians);
+	public void rotate(String angleInRadians);
 	
 	public void loop();
 	
@@ -74,338 +74,338 @@ public interface ProcessingInterface{
 	
 	public void cursor();
 	
-	public void cursor(JavaScriptObject cursorOverloaded_0, JavaScriptObject cursorOverloaded_1);
+	public void cursor(String cursorOverloaded_0, String cursorOverloaded_1);
 	
-	public void cursor(JavaScriptObject cursorOverloaded_0);
+	public void cursor(String cursorOverloaded_0);
 	
-	public void cursor(JavaScriptObject cursorOverloaded_0, JavaScriptObject cursorOverloaded_1, JavaScriptObject cursorOverloaded_2, JavaScriptObject cursorOverloaded_3);
+	public void cursor(String cursorOverloaded_0, String cursorOverloaded_1, String cursorOverloaded_2, String cursorOverloaded_3);
 	
-	public void cursor(JavaScriptObject cursorOverloaded_0, JavaScriptObject cursorOverloaded_1, JavaScriptObject cursorOverloaded_2);
+	public void cursor(String cursorOverloaded_0, String cursorOverloaded_1, String cursorOverloaded_2);
 	
-	public void Import(JavaScriptObject lib);
+	public void Import(String lib);
 	
-	public void decToBin(JavaScriptObject value, JavaScriptObject numBitsInValue);
+	public void decToBin(String value, String numBitsInValue);
 	
 	public void unbinary(String binaryString);
 	
-	public void unbinary(JavaScriptObject unbinaryOverloaded_0, JavaScriptObject unbinaryOverloaded_1);
+	public void unbinary(String unbinaryOverloaded_0, String unbinaryOverloaded_1);
 	
-	public void decimalToHex(JavaScriptObject d, JavaScriptObject padding);
+	public void decimalToHex(String d, String padding);
 	
-	public void hex(JavaScriptObject value, JavaScriptObject len);
+	public void hex(String value, String len);
 	
-	public void loadStrings(JavaScriptObject url);
+	public void loadStrings(String url);
 	
-	public void loadBytes(JavaScriptObject url);
+	public void loadBytes(String url);
 	
-	public void matchAll(JavaScriptObject aString, JavaScriptObject aRegExp);
+	public void matchAll(String aString, String aRegExp);
 	
-	public void equals(JavaScriptObject str);
+	public void equals(String str);
 	
-	public void println(JavaScriptObject message);
+	public void println(String message);
 	
-	public void print(JavaScriptObject message);
+	public void print(String message);
 	
 	public void str(String val);
 	
-	public void str(JavaScriptObject strOverloaded_0, JavaScriptObject strOverloaded_1);
+	public void str(String strOverloaded_0, String strOverloaded_1);
 	
-	public void random(JavaScriptObject aMin, JavaScriptObject aMax);
+	public void random(String aMin, String aMax);
 	
-	public void random(JavaScriptObject randomOverloaded_0, JavaScriptObject randomOverloaded_1, JavaScriptObject randomOverloaded_2);
+	public void random(String randomOverloaded_0, String randomOverloaded_1, String randomOverloaded_2);
 	
-	public void noiseGen(JavaScriptObject x, JavaScriptObject y);
+	public void noiseGen(String x, String y);
 	
-	public void smoothedNoise(JavaScriptObject x, JavaScriptObject y);
+	public void smoothedNoise(String x, String y);
 	
-	public void interpolate(JavaScriptObject a, JavaScriptObject b, JavaScriptObject x);
+	public void interpolate(String a, String b, String x);
 	
-	public void interpolatedNoise(JavaScriptObject x, JavaScriptObject y);
+	public void interpolatedNoise(String x, String y);
 	
-	public void perlinNoise_2D(JavaScriptObject x, JavaScriptObject y);
+	public void perlinNoise_2D(String x, String y);
 	
 	public void size(String aWidth, String aHeight, String aMode);
 	
-	public void uniformf(JavaScriptObject programObj, JavaScriptObject varName, JavaScriptObject varValue);
+	public void uniformf(String programObj, String varName, String varValue);
 	
-	public void uniformi(JavaScriptObject programObj, JavaScriptObject varName, JavaScriptObject varValue);
+	public void uniformi(String programObj, String varName, String varValue);
 	
-	public void vertexAttribPointer(JavaScriptObject programObj, JavaScriptObject varName, JavaScriptObject size, JavaScriptObject VBO);
+	public void vertexAttribPointer(String programObj, String varName, String size, String VBO);
 	
-	public void uniformMatrix(JavaScriptObject programObj, JavaScriptObject varName, JavaScriptObject transpose, JavaScriptObject matrix);
+	public void uniformMatrix(String programObj, String varName, String transpose, String matrix);
 	
-	public void lightFalloff(JavaScriptObject constant, JavaScriptObject linear, JavaScriptObject quadratic);
+	public void lightFalloff(String constant, String linear, String quadratic);
 	
-	public void lightSpecular(JavaScriptObject r, JavaScriptObject g, JavaScriptObject b);
+	public void lightSpecular(String r, String g, String b);
 	
-	public void spotLight(JavaScriptObject r, JavaScriptObject g, JavaScriptObject b, JavaScriptObject x, JavaScriptObject y, JavaScriptObject z, JavaScriptObject nx, JavaScriptObject ny, JavaScriptObject nz, JavaScriptObject angle, JavaScriptObject concentration);
+	public void spotLight(String r, String g, String b, String x, String y, String z, String nx, String ny, String nz, String angle, String concentration);
 	
 	public void camera(String eyeX, String eyeY, String eyeZ, String centerX, String centerY, String centerZ, String upX, String upY, String upZ);
 	
-	public void camera(JavaScriptObject cameraOverloaded_0);
+	public void camera(String cameraOverloaded_0);
 	
 	public void perspective(String fov, String aspect, String near, String far);
 	
-	public void perspective(JavaScriptObject perspectiveOverloaded_0);
+	public void perspective(String perspectiveOverloaded_0);
 	
-	public void perspective(JavaScriptObject perspectiveOverloaded_0, JavaScriptObject perspectiveOverloaded_1, JavaScriptObject perspectiveOverloaded_2);
+	public void perspective(String perspectiveOverloaded_0, String perspectiveOverloaded_1, String perspectiveOverloaded_2);
 	
-	public void frustum(JavaScriptObject left, JavaScriptObject right, String bottom, String top, JavaScriptObject near, JavaScriptObject far);
+	public void frustum(String left, String right, String bottom, String top, String near, String far);
 	
-	public void ortho(JavaScriptObject left, JavaScriptObject right, JavaScriptObject bottom, JavaScriptObject top, JavaScriptObject near, JavaScriptObject far);
+	public void ortho(String left, String right, String bottom, String top, String near, String far);
 	
-	public void ortho(JavaScriptObject orthoOverloaded_0);
+	public void ortho(String orthoOverloaded_0);
 	
 	public void sphereDetail(String ures, String vres);
 	
-	public void sphereDetail(JavaScriptObject sphereDetailOverloaded_0);
+	public void sphereDetail(String sphereDetailOverloaded_0);
 	
-	public void modelX(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void modelX(String x, String y, String z);
 	
-	public void modelY(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void modelY(String x, String y, String z);
 	
-	public void modelZ(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void modelZ(String x, String y, String z);
 	
 	public void ambient();
 	
-	public void ambient(JavaScriptObject ambientOverloaded_0, JavaScriptObject ambientOverloaded_1);
+	public void ambient(String ambientOverloaded_0, String ambientOverloaded_1);
 	
 	public void emissive();
 	
-	public void emissive(JavaScriptObject emissiveOverloaded_0, JavaScriptObject emissiveOverloaded_1);
+	public void emissive(String emissiveOverloaded_0, String emissiveOverloaded_1);
 	
-	public void shininess(JavaScriptObject shine);
+	public void shininess(String shine);
 	
 	public void specular();
 	
-	public void specular(JavaScriptObject specularOverloaded_0);
+	public void specular(String specularOverloaded_0);
 	
 	public void fill();
 	
-	public void fill(JavaScriptObject fillOverloaded_0);
+	public void fill(String fillOverloaded_0);
 	
-	public void fill(JavaScriptObject fillOverloaded_0, JavaScriptObject fillOverloaded_1);
+	public void fill(String fillOverloaded_0, String fillOverloaded_1);
 	
-	public void fill(JavaScriptObject fillOverloaded_0, JavaScriptObject fillOverloaded_1, JavaScriptObject fillOverloaded_2);
+	public void fill(String fillOverloaded_0, String fillOverloaded_1, String fillOverloaded_2);
 	
-	public void fill(JavaScriptObject fillOverloaded_0, JavaScriptObject fillOverloaded_1, JavaScriptObject fillOverloaded_2, JavaScriptObject fillOverloaded_3);
+	public void fill(String fillOverloaded_0, String fillOverloaded_1, String fillOverloaded_2, String fillOverloaded_3);
 	
 	public void stroke();
 	
-	public void stroke(JavaScriptObject strokeOverloaded_0);
+	public void stroke(String strokeOverloaded_0);
 	
-	public void stroke(JavaScriptObject strokeOverloaded_0, JavaScriptObject strokeOverloaded_1);
+	public void stroke(String strokeOverloaded_0, String strokeOverloaded_1);
 	
-	public void stroke(JavaScriptObject strokeOverloaded_0, JavaScriptObject strokeOverloaded_1, JavaScriptObject strokeOverloaded_2);
+	public void stroke(String strokeOverloaded_0, String strokeOverloaded_1, String strokeOverloaded_2);
 	
-	public void stroke(JavaScriptObject strokeOverloaded_0, JavaScriptObject strokeOverloaded_1, JavaScriptObject strokeOverloaded_2, JavaScriptObject strokeOverloaded_3);
+	public void stroke(String strokeOverloaded_0, String strokeOverloaded_1, String strokeOverloaded_2, String strokeOverloaded_3);
 	
-	public void strokeWeight(JavaScriptObject w);
+	public void strokeWeight(String w);
 	
-	public void strokeCap(JavaScriptObject value);
+	public void strokeCap(String value);
 	
-	public void strokeJoin(JavaScriptObject value);
+	public void strokeJoin(String value);
 	
-	public void Point(JavaScriptObject x, JavaScriptObject y);
+	public void Point(String x, String y);
 	
-	public void point(JavaScriptObject x, JavaScriptObject y, JavaScriptObject z);
+	public void point(String x, String y, String z);
 	
-	public void beginShape(JavaScriptObject type);
+	public void beginShape(String type);
 	
-	public void endShape(JavaScriptObject close);
+	public void endShape(String close);
 	
-	public void vertex(JavaScriptObject x, JavaScriptObject y, String x2, String y2, String x3, String y3);
+	public void vertex(String x, String y, String x2, String y2, String x3, String y3);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0, JavaScriptObject vertexOverloaded_1, JavaScriptObject vertexOverloaded_2);
+	public void vertex(String vertexOverloaded_0, String vertexOverloaded_1, String vertexOverloaded_2);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0, JavaScriptObject vertexOverloaded_1, JavaScriptObject vertexOverloaded_2, JavaScriptObject vertexOverloaded_3);
+	public void vertex(String vertexOverloaded_0, String vertexOverloaded_1, String vertexOverloaded_2, String vertexOverloaded_3);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0);
+	public void vertex(String vertexOverloaded_0);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0, JavaScriptObject vertexOverloaded_1);
+	public void vertex(String vertexOverloaded_0, String vertexOverloaded_1);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0, JavaScriptObject vertexOverloaded_1, JavaScriptObject vertexOverloaded_2, JavaScriptObject vertexOverloaded_3, JavaScriptObject vertexOverloaded_4);
+	public void vertex(String vertexOverloaded_0, String vertexOverloaded_1, String vertexOverloaded_2, String vertexOverloaded_3, String vertexOverloaded_4);
 	
-	public void vertex(JavaScriptObject vertexOverloaded_0, JavaScriptObject vertexOverloaded_1, JavaScriptObject vertexOverloaded_2, JavaScriptObject vertexOverloaded_3, JavaScriptObject vertexOverloaded_4, JavaScriptObject vertexOverloaded_5, JavaScriptObject vertexOverloaded_6);
+	public void vertex(String vertexOverloaded_0, String vertexOverloaded_1, String vertexOverloaded_2, String vertexOverloaded_3, String vertexOverloaded_4, String vertexOverloaded_5, String vertexOverloaded_6);
 	
 	public void curve();
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6, JavaScriptObject curveOverloaded_7, JavaScriptObject curveOverloaded_8);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6, String curveOverloaded_7, String curveOverloaded_8);
 	
-	public void curve(JavaScriptObject curveOverloaded_0);
+	public void curve(String curveOverloaded_0);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6, JavaScriptObject curveOverloaded_7);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6, String curveOverloaded_7);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6, JavaScriptObject curveOverloaded_7, JavaScriptObject curveOverloaded_8, JavaScriptObject curveOverloaded_9);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6, String curveOverloaded_7, String curveOverloaded_8, String curveOverloaded_9);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6, JavaScriptObject curveOverloaded_7, JavaScriptObject curveOverloaded_8, JavaScriptObject curveOverloaded_9, JavaScriptObject curveOverloaded_10);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6, String curveOverloaded_7, String curveOverloaded_8, String curveOverloaded_9, String curveOverloaded_10);
 	
-	public void curve(JavaScriptObject curveOverloaded_0, JavaScriptObject curveOverloaded_1, JavaScriptObject curveOverloaded_2, JavaScriptObject curveOverloaded_3, JavaScriptObject curveOverloaded_4, JavaScriptObject curveOverloaded_5, JavaScriptObject curveOverloaded_6, JavaScriptObject curveOverloaded_7, JavaScriptObject curveOverloaded_8, JavaScriptObject curveOverloaded_9, JavaScriptObject curveOverloaded_10, JavaScriptObject curveOverloaded_11);
+	public void curve(String curveOverloaded_0, String curveOverloaded_1, String curveOverloaded_2, String curveOverloaded_3, String curveOverloaded_4, String curveOverloaded_5, String curveOverloaded_6, String curveOverloaded_7, String curveOverloaded_8, String curveOverloaded_9, String curveOverloaded_10, String curveOverloaded_11);
 	
 	public void curveDetail();
 	
-	public void curveDetail(JavaScriptObject curveDetailOverloaded_0);
+	public void curveDetail(String curveDetailOverloaded_0);
 	
-	public void rectMode(JavaScriptObject aRectMode);
+	public void rectMode(String aRectMode);
 	
-	public void ellipseMode(JavaScriptObject aEllipseMode);
+	public void ellipseMode(String aEllipseMode);
 	
-	public void arc(JavaScriptObject x, JavaScriptObject y, JavaScriptObject width, JavaScriptObject height, JavaScriptObject start, JavaScriptObject stop);
+	public void arc(String x, String y, String width, String height, String start, String stop);
 	
 	public void line();
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1, JavaScriptObject lineOverloaded_2, JavaScriptObject lineOverloaded_3, JavaScriptObject lineOverloaded_4, JavaScriptObject lineOverloaded_5, JavaScriptObject lineOverloaded_6);
+	public void line(String lineOverloaded_0, String lineOverloaded_1, String lineOverloaded_2, String lineOverloaded_3, String lineOverloaded_4, String lineOverloaded_5, String lineOverloaded_6);
 	
-	public void line(JavaScriptObject lineOverloaded_0);
+	public void line(String lineOverloaded_0);
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1);
+	public void line(String lineOverloaded_0, String lineOverloaded_1);
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1, JavaScriptObject lineOverloaded_2);
+	public void line(String lineOverloaded_0, String lineOverloaded_1, String lineOverloaded_2);
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1, JavaScriptObject lineOverloaded_2, JavaScriptObject lineOverloaded_3);
+	public void line(String lineOverloaded_0, String lineOverloaded_1, String lineOverloaded_2, String lineOverloaded_3);
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1, JavaScriptObject lineOverloaded_2, JavaScriptObject lineOverloaded_3, JavaScriptObject lineOverloaded_4);
+	public void line(String lineOverloaded_0, String lineOverloaded_1, String lineOverloaded_2, String lineOverloaded_3, String lineOverloaded_4);
 	
-	public void line(JavaScriptObject lineOverloaded_0, JavaScriptObject lineOverloaded_1, JavaScriptObject lineOverloaded_2, JavaScriptObject lineOverloaded_3, JavaScriptObject lineOverloaded_4, JavaScriptObject lineOverloaded_5);
+	public void line(String lineOverloaded_0, String lineOverloaded_1, String lineOverloaded_2, String lineOverloaded_3, String lineOverloaded_4, String lineOverloaded_5);
 	
-	public void bezier(JavaScriptObject x1, JavaScriptObject y1, JavaScriptObject x2, JavaScriptObject y2, JavaScriptObject x3, JavaScriptObject y3, JavaScriptObject x4, JavaScriptObject y4);
+	public void bezier(String x1, String y1, String x2, String y2, String x3, String y3, String x4, String y4);
 	
-	public void bezierPoint(JavaScriptObject a, JavaScriptObject b, JavaScriptObject c, JavaScriptObject d, JavaScriptObject t);
+	public void bezierPoint(String a, String b, String c, String d, String t);
 	
-	public void bezierTangent(JavaScriptObject a, JavaScriptObject b, JavaScriptObject c, JavaScriptObject d, JavaScriptObject t);
+	public void bezierTangent(String a, String b, String c, String d, String t);
 	
-	public void curvePoint(JavaScriptObject a, JavaScriptObject b, JavaScriptObject c, JavaScriptObject d, JavaScriptObject t);
+	public void curvePoint(String a, String b, String c, String d, String t);
 	
-	public void curveTangent(JavaScriptObject a, JavaScriptObject b, JavaScriptObject c, JavaScriptObject d, JavaScriptObject t);
+	public void curveTangent(String a, String b, String c, String d, String t);
 	
-	public void triangle(JavaScriptObject x1, JavaScriptObject y1, JavaScriptObject x2, JavaScriptObject y2, JavaScriptObject x3, JavaScriptObject y3);
+	public void triangle(String x1, String y1, String x2, String y2, String x3, String y3);
 	
-	public void quad(JavaScriptObject x1, JavaScriptObject y1, JavaScriptObject x2, JavaScriptObject y2, JavaScriptObject x3, JavaScriptObject y3, JavaScriptObject x4, JavaScriptObject y4);
+	public void quad(String x1, String y1, String x2, String y2, String x3, String y3, String x4, String y4);
 	
-	public void rect(JavaScriptObject x, JavaScriptObject y, JavaScriptObject width, JavaScriptObject height);
+	public void rect(String x, String y, String width, String height);
 	
 	public void ellipse(String x, String y, String width, String height);
 	
-	public void normal(JavaScriptObject nx, JavaScriptObject ny, JavaScriptObject nz);
+	public void normal(String nx, String ny, String nz);
 	
-	public void normal(JavaScriptObject normalOverloaded_0, JavaScriptObject normalOverloaded_1, JavaScriptObject normalOverloaded_2, JavaScriptObject normalOverloaded_3);
+	public void normal(String normalOverloaded_0, String normalOverloaded_1, String normalOverloaded_2, String normalOverloaded_3);
 	
 	public void save(String file);
 	
-	public void PImage(JavaScriptObject aWidth, JavaScriptObject aHeight, String aFormat);
+	public void PImage(String aWidth, String aHeight, String aFormat);
 	
-	public void PImage(JavaScriptObject PImageOverloaded_0, JavaScriptObject PImageOverloaded_1);
+	public void PImage(String PImageOverloaded_0, String PImageOverloaded_1);
 	
-	public void PImage(JavaScriptObject PImageOverloaded_0);
+	public void PImage(String PImageOverloaded_0);
 	
-	public void PImage(JavaScriptObject PImageOverloaded_0, JavaScriptObject PImageOverloaded_1, JavaScriptObject PImageOverloaded_2, JavaScriptObject PImageOverloaded_3);
+	public void PImage(String PImageOverloaded_0, String PImageOverloaded_1, String PImageOverloaded_2, String PImageOverloaded_3);
 	
-	public void createImage(JavaScriptObject w, JavaScriptObject h, JavaScriptObject mode);
+	public void createImage(String w, String h, String mode);
 	
-	public void loadImage(JavaScriptObject file, JavaScriptObject type, String callback);
+	public void loadImage(String file, String type, String callback);
 	
-	public void get(JavaScriptObject x, JavaScriptObject y, JavaScriptObject w, JavaScriptObject h, JavaScriptObject img);
+	public void get(String x, String y, String w, String h, String img);
 	
-	public void get(JavaScriptObject getOverloaded_0);
+	public void get(String getOverloaded_0);
 	
-	public void get(JavaScriptObject getOverloaded_0, JavaScriptObject getOverloaded_1, JavaScriptObject getOverloaded_2, JavaScriptObject getOverloaded_3, JavaScriptObject getOverloaded_4, JavaScriptObject getOverloaded_5);
+	public void get(String getOverloaded_0, String getOverloaded_1, String getOverloaded_2, String getOverloaded_3, String getOverloaded_4, String getOverloaded_5);
 	
-	public void get(JavaScriptObject getOverloaded_0, JavaScriptObject getOverloaded_1, JavaScriptObject getOverloaded_2, JavaScriptObject getOverloaded_3);
+	public void get(String getOverloaded_0, String getOverloaded_1, String getOverloaded_2, String getOverloaded_3);
 	
-	public void get(JavaScriptObject getOverloaded_0, JavaScriptObject getOverloaded_1, JavaScriptObject getOverloaded_2);
+	public void get(String getOverloaded_0, String getOverloaded_1, String getOverloaded_2);
 	
-	public void get(JavaScriptObject getOverloaded_0, JavaScriptObject getOverloaded_1);
+	public void get(String getOverloaded_0, String getOverloaded_1);
 	
-	public void createGraphics(JavaScriptObject w, JavaScriptObject h);
+	public void createGraphics(String w, String h);
 	
-	public void set(JavaScriptObject x, JavaScriptObject y, JavaScriptObject obj, JavaScriptObject img);
+	public void set(String x, String y, String obj, String img);
 	
-	public void set(JavaScriptObject setOverloaded_0, JavaScriptObject setOverloaded_1, JavaScriptObject setOverloaded_2, JavaScriptObject setOverloaded_3, JavaScriptObject setOverloaded_4);
+	public void set(String setOverloaded_0, String setOverloaded_1, String setOverloaded_2, String setOverloaded_3, String setOverloaded_4);
 	
 	public void background();
 	
-	public void background(int backgroundOverloaded_0);
+	public void background(String backgroundOverloaded_0);
 	
-	public void background(JavaScriptObject backgroundOverloaded_0, JavaScriptObject backgroundOverloaded_1);
+	public void background(String backgroundOverloaded_0, String backgroundOverloaded_1);
 	
-	public void getImage(JavaScriptObject img);
+	public void getImage(String img);
 	
-	public void image(JavaScriptObject img, JavaScriptObject x, JavaScriptObject y, JavaScriptObject w, JavaScriptObject h);
+	public void image(String img, String x, String y, String w, String h);
 	
-	public void clear(JavaScriptObject x, JavaScriptObject y, JavaScriptObject width, JavaScriptObject height);
+	public void clear(String x, String y, String width, String height);
 	
-	public void clear(JavaScriptObject clearOverloaded_0);
+	public void clear(String clearOverloaded_0);
 	
 	public void tint();
 	
 	public void noTint();
 	
-	public void copy(JavaScriptObject src, JavaScriptObject sx, JavaScriptObject sy, JavaScriptObject sw, JavaScriptObject sh, JavaScriptObject dx, JavaScriptObject dy, String dw, String dh);
+	public void copy(String src, String sx, String sy, String sw, String sh, String dx, String dy, String dw, String dh);
 	
-	public void blend(JavaScriptObject src, JavaScriptObject sx, JavaScriptObject sy, JavaScriptObject sw, JavaScriptObject sh, JavaScriptObject dx, JavaScriptObject dy, JavaScriptObject dw, JavaScriptObject dh, JavaScriptObject mode, String pimgdest);
+	public void blend(String src, String sx, String sy, String sw, String sh, String dx, String dy, String dw, String dh, String mode, String pimgdest);
 	
-	public void blend(JavaScriptObject blendOverloaded_0, JavaScriptObject blendOverloaded_1, JavaScriptObject blendOverloaded_2, JavaScriptObject blendOverloaded_3, JavaScriptObject blendOverloaded_4, JavaScriptObject blendOverloaded_5, JavaScriptObject blendOverloaded_6, JavaScriptObject blendOverloaded_7, JavaScriptObject blendOverloaded_8, JavaScriptObject blendOverloaded_9);
+	public void blend(String blendOverloaded_0, String blendOverloaded_1, String blendOverloaded_2, String blendOverloaded_3, String blendOverloaded_4, String blendOverloaded_5, String blendOverloaded_6, String blendOverloaded_7, String blendOverloaded_8, String blendOverloaded_9);
 	
-	public void blend(JavaScriptObject blendOverloaded_0, JavaScriptObject blendOverloaded_1, JavaScriptObject blendOverloaded_2, JavaScriptObject blendOverloaded_3, JavaScriptObject blendOverloaded_4, JavaScriptObject blendOverloaded_5, JavaScriptObject blendOverloaded_6, JavaScriptObject blendOverloaded_7, JavaScriptObject blendOverloaded_8, JavaScriptObject blendOverloaded_9, JavaScriptObject blendOverloaded_10, JavaScriptObject blendOverloaded_11);
+	public void blend(String blendOverloaded_0, String blendOverloaded_1, String blendOverloaded_2, String blendOverloaded_3, String blendOverloaded_4, String blendOverloaded_5, String blendOverloaded_6, String blendOverloaded_7, String blendOverloaded_8, String blendOverloaded_9, String blendOverloaded_10, String blendOverloaded_11);
 	
-	public void intersect(JavaScriptObject sx1, JavaScriptObject sy1, JavaScriptObject sx2, JavaScriptObject sy2, JavaScriptObject dx1, JavaScriptObject dy1, JavaScriptObject dx2, JavaScriptObject dy2);
+	public void intersect(String sx1, String sy1, String sx2, String sy2, String dx1, String dy1, String dx2, String dy2);
 	
-	public void blit_resize(JavaScriptObject img, JavaScriptObject srcX1, JavaScriptObject srcY1, JavaScriptObject srcX2, JavaScriptObject srcY2, JavaScriptObject destPixels, JavaScriptObject screenW, JavaScriptObject screenH, JavaScriptObject destX1, JavaScriptObject destY1, JavaScriptObject destX2, JavaScriptObject destY2, JavaScriptObject mode);
+	public void blit_resize(String img, String srcX1, String srcY1, String srcX2, String srcY2, String destPixels, String screenW, String screenH, String destX1, String destY1, String destX2, String destY2, String mode);
 	
-	public void loadFont(JavaScriptObject name);
+	public void loadFont(String name);
 	
-	public void textFont(JavaScriptObject name, JavaScriptObject size);
+	public void textFont(String name, String size);
 	
-	public void textSize(JavaScriptObject size);
+	public void textSize(String size);
 	
-	public void glyphLook(JavaScriptObject font, JavaScriptObject chr);
+	public void glyphLook(String font, String chr);
 	
 	public void text();
 	
-	public void text(JavaScriptObject textOverloaded_0);
+	public void text(String textOverloaded_0);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1);
+	public void text(String textOverloaded_0, String textOverloaded_1);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1, JavaScriptObject textOverloaded_2, JavaScriptObject textOverloaded_3);
+	public void text(String textOverloaded_0, String textOverloaded_1, String textOverloaded_2, String textOverloaded_3);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1, JavaScriptObject textOverloaded_2);
+	public void text(String textOverloaded_0, String textOverloaded_1, String textOverloaded_2);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1, JavaScriptObject textOverloaded_2, JavaScriptObject textOverloaded_3, JavaScriptObject textOverloaded_4);
+	public void text(String textOverloaded_0, String textOverloaded_1, String textOverloaded_2, String textOverloaded_3, String textOverloaded_4);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1, JavaScriptObject textOverloaded_2, JavaScriptObject textOverloaded_3, JavaScriptObject textOverloaded_4, JavaScriptObject textOverloaded_5);
+	public void text(String textOverloaded_0, String textOverloaded_1, String textOverloaded_2, String textOverloaded_3, String textOverloaded_4, String textOverloaded_5);
 	
-	public void text(JavaScriptObject textOverloaded_0, JavaScriptObject textOverloaded_1, JavaScriptObject textOverloaded_2, JavaScriptObject textOverloaded_3, JavaScriptObject textOverloaded_4, JavaScriptObject textOverloaded_5, JavaScriptObject textOverloaded_6);
+	public void text(String textOverloaded_0, String textOverloaded_1, String textOverloaded_2, String textOverloaded_3, String textOverloaded_4, String textOverloaded_5, String textOverloaded_6);
 	
-	public void loadGlyph(JavaScriptObject url);
+	public void loadGlyph(String url);
 	
-	public void regex(JavaScriptObject needle, JavaScriptObject hay);
+	public void regex(String needle, String hay);
 	
-	public void buildPath(JavaScriptObject d);
+	public void buildPath(String d);
 	
 	public void parseSVGFontse(String svg);
 	
 	public void loadXML();
 	
-	public void extendClass(JavaScriptObject obj, JavaScriptObject args, String fn);
+	public void extendClass(String obj, String args, String fn);
 	
-	public void extendClass(JavaScriptObject extendClassOverloaded_0, JavaScriptObject extendClassOverloaded_1, JavaScriptObject extendClassOverloaded_2, JavaScriptObject extendClassOverloaded_3);
+	public void extendClass(String extendClassOverloaded_0, String extendClassOverloaded_1, String extendClassOverloaded_2, String extendClassOverloaded_3);
 	
-	public void addMethod(String object, JavaScriptObject name, JavaScriptObject fn);
+	public void addMethod(String object, String name, String fn);
 	
 	public void init(String code);
 	
-	public void attach(JavaScriptObject elem, JavaScriptObject type, JavaScriptObject fn);
+	public void attach(String elem, String type, String fn);
 	
 }

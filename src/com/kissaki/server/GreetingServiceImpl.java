@@ -1,5 +1,6 @@
 package com.kissaki.server;
 
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -15,13 +16,12 @@ import com.kissaki.server.itemDataModel.ItemDataModelMeta;
 import com.kissaki.server.userDataModel.UserDataModel;
 import com.kissaki.server.userDataModel.UserDataModelMeta;
 import com.kissaki.shared.FieldVerifier;
-import com.google.appengine.api.channel.ChannelMessage;
-import com.google.appengine.api.channel.ChannelService;
-import com.google.appengine.api.channel.ChannelServiceFactory;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.memcache.MemcacheServicePb.MemcacheDeleteRequest.Item;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
-import net.arnx.jsonic.JSON;
+
 
 
 /**
@@ -32,6 +32,8 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 		GreetingService {
 	int count = 0;
 	Debug debug;
+	Gson gson;
+	
 	
 	Channel channel = new Channel();
 	
@@ -41,7 +43,7 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 	
 	public GreetingServiceImpl () {
 		debug = new Debug(this);
-		
+		gson = new Gson();
 	}
 	
 	
@@ -108,6 +110,7 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 
 	
 	/**
+	 * **オーナー情報が入ってない
 	 * アイテムをデータベースに登録する。
 	 * すでにある場合、オーナーリストに情報を追加する。
 	 * @param input
@@ -131,7 +134,8 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 			debug.trace("error_"+e);
 		}
 		
-		try {
+		
+		try {//新アイテムの登録と、ユーザーにその所持を設定する。　トランザクションの一致がほしい
 			/*
 			 * アイテムは、ユーザーキーを入れて登録する、その時、すでにアイテムがDBにあれば、キーのオーナーの値を追加する。
 			 */
@@ -141,13 +145,11 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 			
 			ArrayList<Key> ownerList = new ArrayList<Key>();
 			ownerList.add(key);
-			debug.trace("オーナー作成完了");
 			Key itemkey = Datastore.createKey(ItemDataModel.class, address);//アドレスで一意にする。
 			
-			debug.trace("オーナー作成完了1");
 			ItemDataModel itemDataModel = new ItemDataModel();
 			itemDataModel.setKey(itemkey);
-			debug.trace("オーナー作成完了2");
+			
 			itemDataModel.setM_itemName(itemName);
 			
 			itemDataModel.setM_ownerList(ownerList);
@@ -158,9 +160,24 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 			ArrayList<Key> tagList = new ArrayList<Key>();
 			itemDataModel.setM_tagList(tagList);
 			
-			debug.trace("オーナー作成完了4");
 			Datastore.put(itemDataModel);
-			debug.trace("オーナー作成完了5");
+			
+			
+			/*
+			 * で、ユーザー情報も更新する。
+			 */
+			debug.trace("ユーザーさんに持たせます");
+			UserDataModelMeta meta = UserDataModelMeta.get();
+			List<Key> myKey = Datastore.query(meta)
+			                    .filter(meta.key.equal(key))
+			                    .asKeyList();
+			debug.assertTrue(myKey.size() == 1, "ちょ、何人も居るの");
+			if(myKey.size() > 0) {
+				UserDataModel myself = Datastore.get(UserDataModel.class, myKey.get(0));
+				myself.getItemKeys().add(itemkey);//アイテムの情報を追加(おそらくすでに存在する場合とかw)
+			    Datastore.put(myself);
+			}
+			
 		}catch (Exception e) {
 			debug.trace("save?_"+e);
 		}
@@ -174,27 +191,65 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 	 * @return
 	 */
 	private String getItemQualification(String input) {
-		//JOSNからKeyを取得する。
+		Key key = null;
+		//JSONからKeyを取得する。
 		String keySource = input.substring("getItemData+".length(), input.length());
 		
-		Key key = JSON.decode(keySource, Key.class);
+		debug.trace("とりにきました_"+keySource);//きっとまたエンコードの問題
+//		keySourceのエンコードをしらべると、別のものになるんじゃなかろうか。
+		debug.trace("before");
+		String itemKeyUTF8String = encode(keySource);
+		debug.trace("itemKeyUTF8String_"+itemKeyUTF8String);
 		
+		try {
+			key = gson.fromJson(itemKeyUTF8String, Key.class);
+			debug.trace("keyFromGson_"+key);
+		} catch (Exception e) {
+			debug.trace("error_"+e);
+		}
+		
+		debug.assertTrue(key != null, "nullでアイテム召還に到達");
 //		アイテムデータをPushで返す
 		
 		ItemDataModelMeta meta = ItemDataModelMeta.get();
 		List<ItemDataModel> itemList = Datastore.query(meta)
-		.filter(meta.key.equal(key))
+		//.filter(meta.key.equal(key))//ここが一致しない、エンコードかな。 一致出来るようになってからにしよう
 		.asList(); 
 		
-		for (Iterator<ItemDataModel> uIteletor = itemList.iterator(); uIteletor.hasNext();) {
-			ItemDataModel item = uIteletor.next();
-			Map<String,ItemDataModel> map = new HashMap<String,ItemDataModel>();
-			
-			map.put("itemDataModel",item);
-			String itemJSONString = JSON.encode(map);
-			channel.sendMessage(channelId, itemJSONString);
+		debug.trace("itemList_"+itemList);//これがそんざいしてないんだよね。
+		
+		if (itemList != null) {
+			for (Iterator<ItemDataModel> uIteletor = itemList.iterator(); uIteletor.hasNext();) {
+				ItemDataModel item = uIteletor.next();
+				Map<String,ItemDataModel> map = new HashMap<String,ItemDataModel>();
+				
+				debug.trace("item.getKey()_"+item.getKey());
+				
+				map.put("itemDataModel",item);
+				String itemJSONString = gson.toJson(map);
+				channel.sendMessage(channelId, itemJSONString);
+			}
 		}
+		
 		return "ok";
+	}
+
+
+	private String encode(String keySource) {
+		try {
+			byte b[] = keySource.getBytes("UTF-8");
+			String s = new String(b);
+			debug.trace("s_"+s);
+			
+			if (keySource == s) {
+				debug.trace("一緒");
+			}
+			return s;
+		} catch (Exception e) {
+			debug.trace("encode_error_"+e);
+		}
+		
+		return null;
 	}
 
 
@@ -217,11 +272,12 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 				if (currentUserDataModel.getM_userPass().matches(userPass)) {
 					debug.trace("一致します");
 					//currentUserDataModelはユーザー。なので、アイテム情報とかも持ってる筈。
-					
+					String channelKey = channel.getChannel(channelId);
 					Map<String,Object> map = new HashMap<String,Object>();
 					map.put("userData",currentUserDataModel);
-					map.put("channelID",channel.getChannel(channelId));
-					String s = JSON.encode(map);
+					map.put("channelID",channelKey);
+					String s = gson.toJson(map);
+					//String s = JSON.encode(map);
 					debug.trace("s_"+s);
 					ret = s;
 					return ret;
@@ -244,8 +300,9 @@ public class GreetingServiceImpl extends RemoteServiceServlet implements
 		
 		Map<String,Object> map = new HashMap<String,Object>();
 		map.put("userData",uDataModel);
-		map.put("channelID",channel.getChannel(channelId));
-		String s = JSON.encode(map);
+		String channelKey = channel.getChannel(channelId);
+		map.put("channelID",channelKey);
+		String s = gson.toJson(map);
 		ret = s;
 		return ret;
 	}

@@ -3,18 +3,22 @@ package com.kissaki.client;
 
 import java.util.Arrays;//array
 import java.util.List;//list
+import java.util.Random;
 
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.UmbrellaException;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
+
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
 import com.kissaki.client.channel.Channel;
 import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
@@ -23,6 +27,7 @@ import com.kissaki.client.login.MyDialogBox;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEvent;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
+import com.kissaki.client.userStatusController.UserStatusController;
 
 /**
  * アプリケーションのコントローラ
@@ -208,9 +213,6 @@ public class KickController {
 				String jsonString = exec.subSequence("Channel_Open:".length(), exec.length()).toString();
 				
 				setUpUserKey(jsonString);
-				
-				
-				
 				//画面の片付けとかも行う。
 				
 				//ここで遷移がぶっちぎれて、Channelだよりになる。
@@ -226,32 +228,25 @@ public class KickController {
 			
 			//ユーザーのキーでいろいろやる
 			
-			greetingService.greetServer("getItemData+"+uStCont.getUserKey(),
-					new AsyncCallback<String>() {
-				public void onFailure(Throwable caught) {
-					debug.trace("failure");
-				}
-
-				public void onSuccess(String result) {
-					debug.trace("success!_"+result);
-					procedure("アイテム取得開始");
-				}
-			}
-			);
+			//Jsonでクエリー構築しよう
+			/*
+			 * ユーザーキーと所持アイテムのキーで召還する。
+			 * キューにためておいた通信を行う。そんだけ。
+			 */
+			String userKey = uStCont.getUserKey();
+			procQueExecute(userKey);
+			
 			
 			//ローディング画面表示する
-			
+			initCanvas();
 			
 			
 		case STATUS_KICK_EXEC_PROC:
-			
-			
 			//アイテムを表示する
 			if (exec.matches("アイテム取得開始")) {
 				//描画のアップデートを行う、、モデルの件数みてがんばればいいかな。
 				debug.trace("アイテム取得が開始しました");
 			}
-			
 			
 			break;
 			
@@ -271,10 +266,42 @@ public class KickController {
 		if (exec.startsWith("encodedData:")) {
 			String encodedData = exec.substring("encodedData:".length(), exec.length());
 			debug.trace("どうなんだろう_"+encodedData);
+			
+			getItem(encodedData);
 		}
 	}
 	
 	
+	/**
+	 * キューの通信を実行する。
+	 * Asyncだから、チョッパやで終わる筈。
+	 * @param userKey
+	 */
+	private void procQueExecute(String userKey) {
+		String request = null;
+		
+		request = uStCont.executeQueuedRequest();
+		
+		while (request != null) {
+			debug.trace("このブロック開始");
+			greetingService.greetServer("getItemData+"+request,
+					new AsyncCallback<String>() {
+				public void onFailure(Throwable caught) {
+					debug.trace("failure");
+				}
+	
+				public void onSuccess(String result) {
+					debug.trace("success!_"+result);
+					procedure("アイテム取得開始");
+				}
+			}
+			);
+			
+			request = uStCont.executeQueuedRequest();//一件もなければnullを返す
+		}
+		debug.trace("到着、全件ロード開始");
+	}
+
 	/**
 	 * ユーザーデータのユーザーキーを設定する。
 	 * @param jsonString
@@ -296,8 +323,9 @@ public class KickController {
 		
 		if (root != null) {
 			if (root.get("channelID").isString() != null) {
-				channelID = root.get("channelID").isString();
-				debug.trace("channelID_"+channelID);
+				channelID = root.get("channelID").isString();//ここで、前後%22が着いてる。とっちゃえばいい、というものでも無いと思う。取り方がある筈。
+				
+				debug.trace("channelID_"+channelID.stringValue());
 			}
 			
 			if (root.get("userData").isObject() != null) {
@@ -315,23 +343,10 @@ public class KickController {
 				JSONObject key = userData.get("key").isObject();
 				debug.trace("key_"+key);
 				uStCont.setUserKey(key.toString());
-				
-				/*
-				 * 適当に登録する
-				 */
-//				greetingService.greetServer("setItemData+"+key,
-//						new AsyncCallback<String>() {
-//					public void onFailure(Throwable caught) {
-//						debug.trace("failure");
-//					}
-//	
-//					public void onSuccess(String result) {
-//						debug.trace("setItemData+success!_"+result);
-//					}
-//				}
-//				);
 			}
 		}
+		
+		
 		/*
 		 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
 		 */
@@ -343,15 +358,20 @@ public class KickController {
 		
 		setKickStatus(STATUS_KICK_EXEC_INIT);
 		
-		try {
+		if (channelID != null) {
 			setChannelID(channelID.toString());
-		}catch (Exception e) {
-			debug.trace("error_"+e);
+		} else {
+			debug.assertTrue(false, "なんらかの理由でchannlelIDが入ってないようです");
 		}
+		
 		/*
 		 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
 		 */
-		//if (userItemArray != null) setUpUserItemRequest(userItemArray);
+		if (userItemArray != null) setUpUserItemRequest(userItemArray);
+		
+		if (true) {
+			updateItemData("http://");
+		}
 	}
 
 	/**
@@ -362,9 +382,29 @@ public class KickController {
 
 		//ここでアレイとして保存しておく。
 
+		
 		int size = userItemArray.size();
 		for (int i = 0; i < size; i++) {
 			JSONObject key = userItemArray.get(i).isObject();
+			debug.trace("key_"+key);
+			uStCont.addRequestToRequestQueue(key.toString());
+			
+			//キーは、このユーザーが持っている筈のもの、呼び水として使う。
+			/*
+			 * 寿命が非常に短いものがいいな。
+			 * リクエスト投げたら、消えるようなやつ。
+			 * ユーザーのリクエストキューにセットして、どんどん呼び出す、という形にしよう。
+			 * currentなユーザーのアイテムリクエストキュー。
+			 * 
+			 * このユーザーのアカウントに深く紐づいたDataModelがほしい。
+			 * どうやって実現するのがクールかな。
+			 * ユーザー名が切り替わるたびに死ぬとか、そういったのがいいな。
+			 * ユーザーをコンテキストとして動く、値の集団。
+			 * まあ、今は考慮のみ行う。
+			 * 
+			 * ユーザーコントローラーの中に、モデルを持とう。
+			 */
+			
 			
 //			//このIDについて、リクエストを投げる。
 //			greetingService.greetServer("getItemData+"+key,
@@ -385,6 +425,7 @@ public class KickController {
 	
 	
 	/**
+	 * JSONの構文分解。
 	 * テストしましょう。
 	 * @param jsonString
 	 */
@@ -461,8 +502,12 @@ public class KickController {
 		/**
 		 * 取得したキーでチャンネルを開く
 		 */
-		Channel channel = ChannelFactory.createChannel(result);
-		debug.trace("result_"+result);
+		String channelIDUTF8String = URL.encode(result);//%22がついている。なんとかならないかな。
+		debug.trace("channelIDUTF8String_"+channelIDUTF8String);
+		channelIDUTF8String = channelIDUTF8String.substring(3,channelIDUTF8String.length()-3);
+		
+		Channel channel = ChannelFactory.createChannel(channelIDUTF8String);
+		
 		
 		/**
 		 * 接続ハンドラ
@@ -525,12 +570,62 @@ public class KickController {
 		procedure("login実行");
 	}
 	
-	
+	int ix,iy = 2;
 	/**
 	 * pushで、サーバからアイテム情報が届いたときに処理する
 	 */
-	private void getItem (ItemDataModel itemDataModel) {
+	private void getItem (String encodedData) {
+//		uStContの内容を更新する
+		ix++; iy--;
+		updateCanvas(ix,iy);
+		if (iy == 0) {
+			iy = 2;
+		}
+	}
+	
+	void updateItemData (String itemNameKey) {
+		/*
+		 * 適当に登録する
+		 * ユーザー情報のkeyと、アイテム情報のkey(仮の名称)を作って、
+		 * アイテムをサーバにおく。
+		 */
+		greetingService.greetServer("setItemData+"+itemNameKey,
+				new AsyncCallback<String>() {
+			public void onFailure(Throwable caught) {
+				debug.trace("failure");
+			}
+
+			public void onSuccess(String result) {
+				debug.trace("setItemData+success!_"+result);
+			}
+		}
+		);
+	}
+	
+	
+	
+	
+	
+	
+	
+	ProcessingImplements p;
+
+	/**
+	 * キャンバスをセットする。
+	 */
+	private void initCanvas () {
 		
+		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
+		ScreenEventRegister reg = new ScreenEventRegister(canvas);
+		p = new ProcessingImplements(canvas.getElement(), "");
+		p.size("600","280","");
+	}
+	
+	private void updateCanvas (int x, int y) {
+		Random rand = new Random();
+//		p.c
+		p.color(""+rand.nextInt(255), ""+rand.nextInt(255), ""+rand.nextInt(255), "1");
+		p.ellipse(""+x*54, ""+y*90, ""+100, ""+100);
 	}
 	
 }

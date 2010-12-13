@@ -9,6 +9,7 @@ import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.widgetideas.graphics.client.Color;
 import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
@@ -46,19 +47,23 @@ public class Kick implements EntryPoint {
 			return;
 		}
 		
-		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
-		canvas.setBackgroundColor(new Color(0, 0, 0, 0.5f));
-
-
-		ScreenEventRegister reg = new ScreenEventRegister(canvas);
-
 		debug = new Debug(this);
-
+		
+		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
+		ScreenEventRegister reg = new ScreenEventRegister(canvas);
 		p = new ProcessingImplements(canvas.getElement(), "");
 		p.size("600","280","");
-
-		p.background(100);
+		
+		p.background(""+100);
 		p.ellipse("10", "100", "40", "40");
+//		p.arc(""+100, ""+20, ""+30, ""+49, ""+9, ""+6);
+		
+		p.stroke(""+123,"20","20");//これでカラー
+		p.rect(""+30, ""+20, ""+55, ""+55);
+		debug.trace("createInteger_"+IntegerJavaScriptObject.getInt());
+		
+		
+//		p.ambient(createInteger(10), createInteger(10));
 		
 		
 //		//上書きできるw
@@ -85,6 +90,25 @@ public class Kick implements EntryPoint {
 		);
 		return;
 	}
+	
+	public static native JavaScriptObject createInteger (int i2) /*-{
+//		function a (i2) {//値になるわけでも、実行されるわけでもない
+//    		var s = i2;
+//    		return this;
+//    	};//悟った。無理だ。
+    	
+    	
+//    	return (i2);//匿名関数だとnullになる
+//    	return valueOf(a(i2));//DOMWindow。
+		//return a(i2);
+//		return eval(a(i2));//エラー
+//		return valueOf(a (i2));
+
+//		var o = { prop : i2 };//書き方変えても、駄目な物は駄目。JavaScriptObjectを継承したint値があればいいわけだ。
+//		var o = new Object();
+//		o.prop = i2;
+//		return o.prop;
+	}-*/;
 
 
 	void getKey (String key){

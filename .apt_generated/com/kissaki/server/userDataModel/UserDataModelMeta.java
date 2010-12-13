@@ -1,6 +1,6 @@
 package com.kissaki.server.userDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-10 12:31:48")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-10 19:05:03")
 /** */
 public final class UserDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.userDataModel.UserDataModel> {
 
