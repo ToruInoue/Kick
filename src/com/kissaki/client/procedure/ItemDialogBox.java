@@ -1,5 +1,7 @@
 package com.kissaki.client.procedure;
 
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.json.client.JSONArray;
@@ -32,7 +34,7 @@ public class ItemDialogBox extends DialogBox {
 	TextBox newTagBox;
 	
 	private ClientSideCurrentItemDataModel m_myModel;
-	
+	KeyDownHandler handler;
 	
 	public ItemDialogBox (KickController kickCont, ClientSideCurrentItemDataModel currentModel, int x, int y) {
 		debug = new Debug(this);
@@ -42,13 +44,28 @@ public class ItemDialogBox extends DialogBox {
 		image = new Image();
 		image.setUrl(Resources.INSTANCE.s_arrow().getURL());//ここは、イメージをどうするか考え終わってないから固定ね。
 		
+		image.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				JSONObject itemKey = new JSONObject();
+				try {
+					itemKey.put("itemKey", m_myModel.getItemKey());
+				} catch (Exception e) {
+					debug.trace("newTagBox.getText().length()_error_"+e);
+				}
+				
+				kCont.procedure("ItemTapped+"+itemKey);
+			}
+		});
+		
 		m_myModel = currentModel;
 		
 		
 
 		VerticalPanel panel = new VerticalPanel();
 		panel.add(image);
-		JSONArray tagArray = m_myModel.getTagArray();
+		JSONArray tagArray = m_myModel.getTagArray();//こいつはnullで来ちゃってる
 		
 		for (int i = 0; i < tagArray.size(); i++) {
 			
@@ -67,7 +84,9 @@ public class ItemDialogBox extends DialogBox {
 
 		newTagBox = new TextBox();//入力してエンターがおされたら云々
 		//"TagUpload+"を出力するイベントを書く
-		newTagBox.addKeyDownHandler(new KeyDownHandler() {
+		
+		
+		handler = new KeyDownHandler() {
 			@Override
 			public void onKeyDown(KeyDownEvent event) {
 				if (event.getNativeKeyCode() == 13) {
@@ -75,27 +94,39 @@ public class ItemDialogBox extends DialogBox {
 					newTagBox.setFocus(false);
 					
 					debug.trace("inputted_2_"+newTagBox.getText());
-					if (0 < newTagBox.getText().length()) {
-						
+					String text = newTagBox.getText();
+					
+					debug.trace("m_myModel.getItemKey()_"+m_myModel.getItemKey());
+					
+					if (0 < text.length()) {
 						//このアイテムのキーと、タグの内容を送る
 						JSONObject itemKeyWithNewTag = new JSONObject();
-						
+						try {
 						itemKeyWithNewTag.put("itemKey", m_myModel.getItemKey());
-						itemKeyWithNewTag.put("newTag", new JSONString(newTagBox.getText()));
-						
-						
+						itemKeyWithNewTag.put("newTag", new JSONString(text));
+						} catch (Exception e) {
+							debug.trace("newTagBox.getText().length()_error_"+e);
+						}
 						
 						kCont.procedure("TagUpload+"+itemKeyWithNewTag);
 //						newTagBox.removeFromParent();					
 					}
 				}
 			}
-		});
+		};
+		
+		newTagBox.addKeyDownHandler(handler);
 		panel.add(newTagBox);
 		
 		setWidget(panel);
 		show();
 		
+	}
+
+	
+	public void selfKill() {
+		//newTagBox.re
+		hide();
 	}
 
 }

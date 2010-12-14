@@ -5,6 +5,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
+import com.google.gson.JsonArray;
+import com.google.gwt.json.client.JSONArray;
+import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
 import com.kissaki.client.KickController;
 import com.kissaki.client.ProcessingImplements;
@@ -79,25 +82,41 @@ public class CanvasController {
 	
 	/**
 	 * アイテム情報の描画を行う
-	 * @param currentItemList
+	 * @param item
 	 */
-	public void updateItemcInfo(List<ClientSideCurrentItemDataModel> currentItemList) {
-//		存在するアイテムの数だけ、アイテム情報を描画する
+	public void updateItemcInfo(JSONArray currentItemChacheList) {
+		
+		
 		int i = 0;
-		for (Iterator<ClientSideCurrentItemDataModel> itemItel = currentItemList.iterator(); itemItel.hasNext(); i++) {
-			ClientSideCurrentItemDataModel currentModel = itemItel.next();
+		//この描画の間に、currentItemChacheListがリセットされたら、しょうがない。次回の描画を待つ。定期的な描画だったら、あんまり困らないのだけれど。そんなバカじからは無い。
+
+		for (i = 0; i < currentItemChacheList.size(); i++) {
+			JSONObject currentModel = currentItemChacheList.get(i).isObject();
+			ClientSideCurrentItemDataModel currentModelReplica = new ClientSideCurrentItemDataModel(currentModel);//すげえw　戻ったw
+			//今回は書く物が一つだけだからOKだが、さて。実際は、ここでずいぶん書き換えが出来る筈。
 			
 			updateCanvas(10,10);
 			
 			debug.trace("アップデートがかかっている");
 			//p.image("http://a0.twimg.com/images/dev/bookmark.png", ""+100, ""+100, ""+100, ""+100);
 			
-			//アイテムの情報を、ダイアログにして出す。
-			//タグはボタンとしてくっつける。
-			//
-			ItemDialogBox item = new ItemDialogBox(kCont, currentModel, 100,100);
-			itemDialogBoxList.add(item);
+			
+			//TODO アイテムが一個しかないから出来る芸当 本来は別管理にしないと行けない筈。
+			if (!itemDialogBoxList.isEmpty()) {
+				//このアイテムに関連する物を全て吹っ飛ばす
+				int size = itemDialogBoxList.size();
+				for (int j = 0; j < size; j++) {
+					ItemDialogBox currentItemDialogBox = itemDialogBoxList.get(j);
+					currentItemDialogBox.selfKill();
+					itemDialogBoxList.remove(j);
+				}
+			}
+			
+			ItemDialogBox itemDialog = new ItemDialogBox(kCont, currentModelReplica, 100,100);
+			itemDialogBoxList.add(itemDialog);
 		}
 	}
+
+	
 
 }

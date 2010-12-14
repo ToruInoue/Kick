@@ -108,17 +108,10 @@ GreetingService {
 	private String getCurrentUserDataQualification(String input) {
 		input = input.substring("getMyData+".length(), input.length());
 		debug.trace("input_"+input);
-		JSONObject object = null;
 		
 		
 		Key userKey = null;
 		String myCurrentJsonData = null;
-		
-		try {
-			object = new JSONObject(input);
-		} catch (JSONException e1) {
-			debug.trace("object_error_"+e1);
-		}
 		
 		try {
 //			JSONObject userKeyObject = object.getJSONObject("userKey");
@@ -131,32 +124,36 @@ GreetingService {
 		}
 		debug.trace("userKey_"+userKey);
 		try {
+			UserDataModelMeta meta = UserDataModelMeta.get();
+			List<UserDataModel> users = Datastore.query(meta)
+			//.filter(meta.key.equal(userKey))//まあ、よく考えたらキーをー致させて物を探す、って結構乱暴な気も。多分文字コードの問題。
+			.asList();
 			
-		UserDataModelMeta meta = UserDataModelMeta.get();
-		List<UserDataModel> users = Datastore.query(meta)
-		//.filter(meta.key.equal(userKey))
-		.asList();
-		debug.trace("来たね");
-		
-		
-		if (0 < users.size()) {
-			debug.assertTrue(users.size() == 1, "ちょ、おなじキーのプレイヤーが何人もいるんですか");
-			
-			//このユーザーのデータを返す
-			UserDataModel myCurrentData = users.get(0);
-			Map<String, Object> map = new HashMap<String, Object>();
-			map.put("userOwnItems", myCurrentData.getItemKeys());
-			map.put("command", "CURRENT_ITEM_DATA");
-			
-			myCurrentJsonData = gson.toJson(map);
-			
-			channel.sendMessage(channelId, myCurrentJsonData);
-		}
-		
+			if (0 < users.size()) {
+				//debug.assertTrue(users.size() == 1, "ちょ、おなじキーのプレイヤーが何人もいるんですか");
+				
+				
+				for (Iterator<UserDataModel> userItel = users.iterator(); userItel.hasNext();) {
+					UserDataModel myCurrentData = userItel.next();
+					if (myCurrentData.getKey().getName().equals(userKey.getName())) {
+						
+						Map<String, Object> map = new HashMap<String, Object>();
+						
+						map.put("userOwnItems", myCurrentData.getItemKeys());
+						map.put("command", "CURRENT_ITEM_DATA");
+						
+						myCurrentJsonData = gson.toJson(map);
+						
+						channel.sendMessage(channelId, myCurrentJsonData);
+						break;
+					}
+					
+				}
+				
+			}
 		} catch (Exception e) {
-			debug.trace("List<UserDataModel> users_error_"+e);
+			debug.trace("List<UserDataModel>_users_error_"+e);
 		}
-		
 		return "ok";
 	}
 
@@ -272,10 +269,20 @@ GreetingService {
 			debug.trace("所持アイテム情報を設定");
 			Key newTaggedItemKey = gson.fromJson(newTaggedItemKeyObject.toString(), Key.class);
 			debug.trace("newTaggedItemKey_"+newTaggedItemKey);
-			newTagData.setM_ownerItemkey(newTaggedItemKey);
+			List<Key> taggedItemKeyList = new ArrayList<Key>();
+			taggedItemKeyList.add(newTaggedItemKey);
+			newTagData.setM_TagOwnerItemList(taggedItemKeyList);
+			
 			
 			newTagData.setM_tagName(newTagNameString);
+			try {
+			debug.trace("到達、タグがここで保存出来ない");
 			Datastore.put(newTagData);
+			debug.trace("どうなってるのかな_");
+			} catch (Exception e) {
+				debug.trace("どうなってるのかな_error_"+e);
+			}
+			
 			
 			JSONObject obj = new JSONObject();
 			try {

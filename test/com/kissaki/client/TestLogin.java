@@ -21,11 +21,12 @@ import com.kissaki.client.subFrame.debug.Debug;
  * @author ToruInoue
  *
  */
-public class TestLogin extends GWTTestCase {
+public class TestLogin 
+//extends GWTTestCase 
+{
 	Debug debug;
 //	KickController kCont;
 	
-	@Override
 	public String getModuleName() {
 		return "com.kissaki.Kick";
 	}

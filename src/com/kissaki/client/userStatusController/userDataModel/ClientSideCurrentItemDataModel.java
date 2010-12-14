@@ -17,7 +17,6 @@ public class ClientSideCurrentItemDataModel {
 	public ClientSideCurrentItemDataModel (JSONObject m_itemdata) {
 		debug = new Debug(this);
 		this.m_itemdata = m_itemdata;
-		
 	}
 	
 	/**
@@ -26,7 +25,7 @@ public class ClientSideCurrentItemDataModel {
 	 */
 	public JSONArray getOwnerArray () {
 		
-		JSONArray array = null;
+		JSONArray array = new JSONArray();
 		try {
 			array = m_itemdata.get("m_ownerList").isArray();
 		} catch (Exception e) {
@@ -44,7 +43,7 @@ public class ClientSideCurrentItemDataModel {
 	 * @return
 	 */
 	public JSONArray getTagArray() {
-		JSONArray array = null;
+		JSONArray array = new JSONArray();
 		try {
 			array = m_itemdata.get("m_tagList").isArray();
 		} catch (Exception e) {
@@ -69,6 +68,9 @@ public class ClientSideCurrentItemDataModel {
 	}
 	
 	
+	public JSONObject itemItself () {
+		return m_itemdata;
+	}
 	
 	
 	

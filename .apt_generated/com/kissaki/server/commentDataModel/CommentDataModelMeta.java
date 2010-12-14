@@ -1,6 +1,6 @@
 package com.kissaki.server.commentDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-10 19:05:03")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-15 03:04:36")
 /** */
 public final class CommentDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.commentDataModel.CommentDataModel> {
 

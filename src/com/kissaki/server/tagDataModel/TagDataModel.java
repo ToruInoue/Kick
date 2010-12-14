@@ -20,9 +20,7 @@ public class TagDataModel {
 
 	private String m_tagName;
 	private List<Key> m_itemOwnerList;
-	
-	@Attribute(primaryKey = false)
-	private Key m_ownerItemkey;
+	private List<Key> m_TagOwnerItemList;//一件だけのアイテムの為に、リスト。
 	
 	
 	
@@ -52,17 +50,17 @@ public class TagDataModel {
 		return m_tagName;
 	}
 
-	public void setM_ownerItemkey(Key m_ownerItemkey) {
-		this.m_ownerItemkey = m_ownerItemkey;
+	public void setM_TagOwnerItemList(List<Key> m_ownerItemList) {
+		this.m_TagOwnerItemList = m_ownerItemList;
 	}
 
-	public Key getM_ownerItemkey() {
-		return m_ownerItemkey;
+	public List<Key> getM_TagOwnerItemList() {
+		return m_TagOwnerItemList;
 	}
 
-	public String showInfo() {
-		return getM_ownerItemkey()+"@"+""+getM_tagName()+"□"+getKey()+"▲"+getM_itemOwnerList().size()+"●"+getM_itemOwnerList().get(0);
-	}
+//	public String showInfo() {
+//		return getM_TagOwnerItemList()+"@"+""+getM_tagName()+"□"+getKey()+"▲"+getM_itemOwnerList().size()+"●"+getM_itemOwnerList().get(0);
+//	}
 
 
 	

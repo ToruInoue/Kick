@@ -1,6 +1,7 @@
 package com.kissaki.client;
 
 
+import java.util.ArrayList;
 import java.util.Arrays;//array
 import java.util.List;//list
 import java.util.Map;
@@ -36,6 +37,7 @@ import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEvent;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 import com.kissaki.client.userStatusController.UserStatusController;
+import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentItemDataModel;
 import com.kissaki.client.userStatusController.userDataModel.ClientSideRequestQueueModel;
 
 /**
@@ -265,9 +267,15 @@ public class KickController {
 				debug.trace("アイテム取得が開始しました");
 			}
 			
-			if (exec.startsWith("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
+			
+			
+			if (exec.startsWith("ItemUpdated+")) {//アイテムが更新/加算されたので、再描画を行う
 				debug.trace("ItemUpdatedに来てる");
-				cCont.updateItemcInfo(uStCont.getCurrentItems());
+				String itemDatas = exec.substring("ItemUpdated+".length(), exec.length());
+				
+				
+				JSONArray itemArray = JSONParser.parseStrict(itemDatas).isArray();
+				cCont.updateItemcInfo(itemArray);
 			}
 			
 			
@@ -289,10 +297,12 @@ public class KickController {
 			 * 所有者の情報で、だれがどんなタグ付けてるか欲しいので、見に行く。
 			 */
 			if (exec.startsWith("ItemTapped+")) {
-				setKickStatus(STATUS_KICK_OWN_INIT);
+				setKickStatus(STATUS_KICK_OWNERS_INIT);
 				//ロードするアイテムのキーを受け取り、コメントの情報を表示する
 				String key = exec.substring("ItemTapped+".length(),  exec.length());
 				procedure("LoadingOwnersOfItem+"+key);
+				
+				//itemKeyから、アイテムのオーナーの情報を聞きに行く
 				
 				//画面の片付けとか行う
 			}
@@ -306,17 +316,24 @@ public class KickController {
 		case STATUS_KICK_OWNERS_INIT:
 			if (exec.startsWith("LoadingOwnersOfItem+")) {
 				setKickStatus(STATUS_KICK_OWNERS_PROC);
+				
+				String itemKey = exec.substring("LoadingOwnersOfItem".length(), exec.length());
+				debug.trace("itemKey_"+itemKey);
+				//アイテムの情報を元に、
 			}
 			
 		case STATUS_KICK_OWNERS_PROC:
 			if (exec.matches("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
-				cCont.updateItemcInfo(uStCont.getCurrentItems());
+				//cCont.updateItemcInfo(uStCont.getCurrentItems());
 			}
 			
 			/*
 			 * アイテムがタッチされたら、その所有者一覧へ
 			 */
-			
+			if (exec.startsWith("ItemTapped+")) {
+				setKickStatus(STATUS_KICK_OWN_INIT);
+				debug.trace("exec_"+exec);
+			}
 			
 			break;
 			
@@ -347,10 +364,22 @@ public class KickController {
 		 */
 		if (exec.startsWith("UserItemCurrent+")) {
 			String newArrivalItemData = exec.substring("UserItemCurrent+".length(), exec.length());
-			uStCont.compareItemData(newArrivalItemData);
+			JSONArray array = JSONParser.parseStrict(newArrivalItemData).isArray();
+			uStCont.compareItemData(array);
+			
+			//もし差分があるようなら
+			List<ClientSideCurrentItemDataModel> originArray = uStCont.getCurrentItems();//ここで、差分だけ返すとか超かっけー
+			
+			JSONArray newArray = new JSONArray();
+			
+			for (int i = 0; i < originArray.size(); i++) {//jsonArray化する
+				ClientSideCurrentItemDataModel currentModel = originArray.get(i);
+				newArray.set(i, currentModel.itemItself());
+			}
+			
+			procedure("ItemUpdated+"+newArray.toString());
 		}
-		
-		
+
 		
 		
 		/*
@@ -444,9 +473,19 @@ public class KickController {
 					
 					uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
 					
+					uStCont.putItemData(item);//pushしてきてもらったデータ、保存する。但し、いつでもひっくり返る可能性がある。
+					List<ClientSideCurrentItemDataModel> originArray = uStCont.getCurrentItems();
 					
-					uStCont.putItemData(item);//こいつが監視できると最高。
-					procedure("ItemUpdated+");
+					JSONArray array = new JSONArray();
+					
+					for (int i = 0; i < originArray.size(); i++) {//jsonArray化する
+						ClientSideCurrentItemDataModel currentModel = originArray.get(i);
+						array.set(i, currentModel.itemItself());
+					}
+
+					
+					//ここで、描画に使う用のデータとして書いてしまえばいい。
+					procedure("ItemUpdated+"+array.toString());
 				}
 			} catch (Exception e) {
 				debug.trace("PUSH_ITEM_error_"+e);
@@ -467,8 +506,8 @@ public class KickController {
 		
 		if (commandString.contains("CURRENT_ITEM_DATA")) {
 			debug.trace("CURRENT_ITEM_DATA_root_"+root);
-			JSONObject obj = root.get("userOwnItems").isObject();
-			procedure("UserItemCurrent+"+obj.toString());
+			JSONArray array = root.get("userOwnItems").isArray();
+			procedure("UserItemCurrent+"+array.toString());
 		}
 		
 	}
@@ -608,65 +647,69 @@ public class KickController {
 		JSONObject userData = null;
 		JSONArray userItemArray = null;
 		JSONString channelID = null;
-		
-		
-		if (JSONParser.parseStrict(jsonString).isObject() != null) {
-			root = JSONParser.parseStrict(jsonString).isObject();
-		}
-		
-		if (root != null) {
-			if (root.get("channelID").isString() != null) {
-				channelID = root.get("channelID").isString();//ここで、前後%22が着いてる。とっちゃえばいい、というものでも無いと思う。取り方がある筈。
+		try {
+			
+			if (JSONParser.parseStrict(jsonString).isObject() != null) {
+				root = JSONParser.parseStrict(jsonString).isObject();
+			}
+			
+			if (root != null) {
+				if (root.get("channelID").isString() != null) {
+					channelID = root.get("channelID").isString();//ここで、前後%22が着いてる。とっちゃえばいい、というものでも無いと思う。取り方がある筈。
+					
+					debug.trace("channelID_"+channelID.stringValue());
+				}
 				
-				debug.trace("channelID_"+channelID.stringValue());
+				if (root.get("userData").isObject() != null) {
+					userData = root.get("userData").isObject();
+					debug.trace("userData_"+userData);
+				}
 			}
 			
-			if (root.get("userData").isObject() != null) {
-				userData = root.get("userData").isObject();
-				debug.trace("userData_"+userData);
-			}
-		}
-		
-		if (userData != null) {
-			try {
-			if (userData.get("itemKeys").isArray() != null) {
-				userItemArray = userData.get("itemKeys").isArray();
-				debug.trace("size_"+userItemArray.size());
-			}
-			} catch (Exception e) {
-				debug.trace("userData.get(\"itemKeys\").isArray() != nullであれば出ない筈なんだけどer_"+e);
+			if (userData != null) {
+				try {
+					if (userData.get("itemKeys").isArray() != null) {
+						debug.trace("userData.get(\"itemKeys\").isArray()_"+userData.get("itemKeys").isArray());
+						userItemArray = userData.get("itemKeys").isArray();
+						debug.trace("size_"+userItemArray.size());
+					}
+				} catch (Exception e) {
+					debug.trace("userData.get(\"itemKeys\").isArray() != nullであれば出ない筈なんだけど_"+e);
+				}
+				
+				if (userData.get("key").isObject() != null) {
+					JSONObject key = userData.get("key").isObject();
+					debug.trace("key_"+key);
+					uStCont.setUserKey(key);
+				}
 			}
 			
-			if (userData.get("key").isObject() != null) {
-				JSONObject key = userData.get("key").isObject();
-				debug.trace("key_"+key);
-				uStCont.setUserKey(key);
+			
+			/*
+			 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
+			 */
+			debug.trace("status_"+uStCont.getUserStatus());
+			debug.trace("name_"+uStCont.getUserName());
+			debug.trace("password_"+uStCont.getUserPass());
+			
+			uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
+			
+			setKickStatus(STATUS_KICK_OWN_INIT);
+			
+			if (channelID != null) {
+				setChannelID(channelID.toString());
+			} else {
+				debug.assertTrue(false, "なんらかの理由でchannlelIDが入ってないようです");
 			}
-		}
-		
-		
-		/*
-		 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
-		 */
-		debug.trace("status_"+uStCont.getUserStatus());
-		debug.trace("name_"+uStCont.getUserName());
-		debug.trace("password_"+uStCont.getUserPass());
-		
-		uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
-		
-		setKickStatus(STATUS_KICK_OWN_INIT);
-		
-		if (channelID != null) {
-			setChannelID(channelID.toString());
-		} else {
-			debug.assertTrue(false, "なんらかの理由でchannlelIDが入ってないようです");
-		}
-		
-		/*
-		 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
-		 */
-		if (userItemArray != null) {
-			setUpUserItemRequest(userItemArray);
+			
+			/*
+			 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
+			 */
+			if (userItemArray != null) {
+				setUpUserItemRequest(userItemArray);
+			}
+		} catch (Exception e) {
+			debug.trace("エラー隠蔽の可能性がある_"+e);
 		}
 	}
 

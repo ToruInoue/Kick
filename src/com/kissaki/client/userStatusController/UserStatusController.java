@@ -11,6 +11,7 @@ import java.util.Map;
 
 import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
+import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
@@ -171,11 +172,49 @@ public class UserStatusController {
 	 * 、、なんだけど、今は比較がめんどいから全とっかえで取得。
 	 * 
 	 * 
-	 * @param newArrivalItemData
+	 * @param array
 	 */
-	public void compareItemData(String newArrivalItemData) {
+	public void compareItemData(JSONArray array) {
 		//JSONObject newItem = JSONParser.parseStrict(newArrivalItemData).isArray();
-		debug.trace("newArrivalItemData_"+newArrivalItemData);
+		debug.trace("newArrivalItemData_"+array);
+		
+		//差分、でどうやって最大効率を出すかは、考えどころ。JSだし。
+		debug.trace("m_iDataModelMap_before_"+m_iDataModelMap.size());
+		eraseAllItemData();
+		
+		debug.trace("m_iDataModelMap_now_"+m_iDataModelMap.size());
+		putItemDataFromArray(array);
+		debug.trace("m_iDataModelMap_after_"+m_iDataModelMap.size());
+	}
+
+
+	/**
+	 * m_iDataModelMapに全データを入れる
+	 * @param array
+	 */
+	private void putItemDataFromArray(JSONArray array) {
+		for (int i = 0; i < array.size(); i++) {
+			JSONObject obj = array.get(i).isObject();
+			debug.trace("obj_"+obj);
+			
+			putItemData(obj);
+		}
+	}
+
+
+	/**
+	 * m_iDataModelMapから全データを消去する
+	 */
+	private void eraseAllItemData() {
+		int count = m_iDataModelMap.size();
+		
+		for (int i = 0; i < count; i++) {
+			m_iDataModelMap.remove(0);//きちんとarrayが実装されていれば、問題ないと思うのだが、、、
+		}
+		
+		debug.assertTrue(m_iDataModelMap.size() == 0, "m_iDataModelMapのリセットに失敗");
+		
+//		m_iDataModelMap = new ArrayList<ClientSideCurrentItemDataModel>();//奇麗さっぱり、、出来るかな？
 	}
 
 

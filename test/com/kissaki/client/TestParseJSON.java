@@ -4,12 +4,13 @@ package com.kissaki.client;
 import com.google.gwt.junit.client.GWTTestCase;
 
 
-public class TestParseJSON extends GWTTestCase{
+public class TestParseJSON
+//extends GWTTestCase
+{
 //	Debug debug;
 	
 //	KickController kCont = null;
 	
-	@Override
 	public String getModuleName() {
 		//"com.example.foo.Foo";
 //		return "com.kissaki.KickController";
