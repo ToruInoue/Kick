@@ -7,11 +7,16 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
+import com.google.gwt.json.client.JSONString;
 import com.kissaki.client.subFrame.debug.Debug;
-import com.kissaki.client.userStatusController.userDataModel.UserDataModel;
-import com.kissaki.client.userStatusController.userDataModel.UserQueueModel;
+import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentItemDataModel;
+import com.kissaki.client.userStatusController.userDataModel.ClientSideRequestQueueModel;
 
 public class UserStatusController {
 	Debug debug = null;
@@ -19,13 +24,13 @@ public class UserStatusController {
 	int m_userStatus;
 	String m_userName = "";
 	String m_userPass = "";
-	String m_userKey = "";
+	JSONObject m_userKey = null;
 	
-	//キューモデルのリスト
-	ArrayList<UserQueueModel> m_uQueueModelMap;//Listが使えるなら、中に取得済みかどうかのフラグ持っておけば、後で見れていいよね。
+	//リクエストキューモデルのリスト
+	ArrayList<ClientSideRequestQueueModel> m_rQueueModelMap;
 
 	//データモデルのリスト
-	List<UserDataModel> m_uDataModelMap;//Listが使えるなら、中に取得済みかどうかのフラグ持っておけば、後で見れていいよね。
+	List<ClientSideCurrentItemDataModel> m_iDataModelMap;
 	
 	
 	public final static int STATUS_USER_LOGOUT = -1;
@@ -37,7 +42,8 @@ public class UserStatusController {
 	
 	public UserStatusController () {
 		debug = new Debug(this);
-		m_uQueueModelMap = new ArrayList<UserQueueModel>();
+		m_rQueueModelMap = new ArrayList<ClientSideRequestQueueModel>();
+		m_iDataModelMap = new ArrayList<ClientSideCurrentItemDataModel>();
 	}
 	
 	
@@ -74,10 +80,10 @@ public class UserStatusController {
 	 * ユーザーのキーを取得する。
 	 * @return
 	 */
-	public String getUserKey() {
+	public JSONObject getUserKey() {
 		return m_userKey;
 	}
-	public void setUserKey(String key) {
+	public void setUserKey(JSONObject key) {
 		m_userKey = key;
 	}
 
@@ -94,29 +100,85 @@ public class UserStatusController {
 	 * リクエストをセットする
 	 * @param request
 	 */
-	public void addRequestToRequestQueue (String request) {
-		m_uQueueModelMap.add(new UserQueueModel(request));//既に同名の物があった場合どうなるのやら。
+	public void addRequestToRequestQueue (String request, String requestTypeGet) {
+		m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));//既に同名の物があった場合どうなるのやら。
 	}
 	
 	/**
 	 * リクエストで未実行のものを実行する
 	 */
-	public String executeQueuedRequest () {
+	public Map<String,String> executeQueuedRequest () {
+		
 		int i = 0;
 		//for (i = 0; i < m_uQueueModelMap.size(); i++) {
-		for (Iterator<UserQueueModel> qIteletor = m_uQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
-			UserQueueModel current = qIteletor.next();//m_uQueueModelMap.get(i);
+		for (Iterator<ClientSideRequestQueueModel> qIteletor = m_rQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
+			ClientSideRequestQueueModel current = qIteletor.next();//m_uQueueModelMap.get(i);
 			if (current.isNotYet()) {
-				//通信として実行する
 				
+				//通信として実行する
 				current.setLoading();
 				
 				//ロード時の文字列を送る。
-				return current.getLoadingRequest();//一件ずつ実行する
+				return current.getLoadingRequestObject();//一件ずつ実行する
 			}
 		}
 		return null;
 	}
 	
+	/**
+	 * 指定したリクエストを取得完了にする
+	 * @param request
+	 */
+	public void completeRequest (String request) {
+		
+		int i = 0;
+		for (Iterator<ClientSideRequestQueueModel> qIteletor = m_rQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
+			ClientSideRequestQueueModel current = qIteletor.next();
+			
+			if (current.getM_dataURL().equals(request)) {
+				//通信として実行完了したマークを付ける(直前にローディングになっている必要があるが、仕様としてmustではないためチェックしていない。)
+				current.setLoaded();
+			}
+		}
+	}
+
+	
+	/**
+	 * アイテム情報を保存する
+	 * @param item
+	 */
+	public void putItemData(JSONObject item) {
+		m_iDataModelMap.add(new ClientSideCurrentItemDataModel(item));
+	}
+
+	
+	/**
+	 * アイテム一覧を渡す
+	 * @return
+	 */
+	public List<ClientSideCurrentItemDataModel> getCurrentItems() {
+		return m_iDataModelMap;
+	}
+
+	/**
+	 * 最新のアイテムデータをうけとり、それを現在のアイテムデータと比較、
+	 * 一致しなければ、一致しない部分について、
+	 * 
+	 * ・ユーザーのアイテムデータを更新
+	 * ・リクエストを再構成
+	 * ・再描画
+	 * 
+	 * 、、なんだけど、今は比較がめんどいから全とっかえで取得。
+	 * 
+	 * 
+	 * @param newArrivalItemData
+	 */
+	public void compareItemData(String newArrivalItemData) {
+		//JSONObject newItem = JSONParser.parseStrict(newArrivalItemData).isArray();
+		debug.trace("newArrivalItemData_"+newArrivalItemData);
+	}
+
+
+
 	
 }

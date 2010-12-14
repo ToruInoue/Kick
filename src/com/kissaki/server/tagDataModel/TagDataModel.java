@@ -11,18 +11,21 @@ import com.google.appengine.api.datastore.Key;
 @Model(kind = "tag")
 public class TagDataModel {
 
+	@Attribute(primaryKey = true)
+    private Key key;
+
 	/**
 	 * タグ名、付けた人のID(key)、タグが設定されたアイテムのID
 	 */	
 
 	private String m_tagName;
 	private List<Key> m_itemOwnerList;
+	
+	@Attribute(primaryKey = false)
 	private Key m_ownerItemkey;
 	
 	
-	@Attribute(primaryKey = true)
-    private Key key;
-
+	
 	public void setKey(Key key) {
 		this.key = key;
 	}
@@ -55,6 +58,10 @@ public class TagDataModel {
 
 	public Key getM_ownerItemkey() {
 		return m_ownerItemkey;
+	}
+
+	public String showInfo() {
+		return getM_ownerItemkey()+"@"+""+getM_tagName()+"□"+getKey()+"▲"+getM_itemOwnerList().size()+"●"+getM_itemOwnerList().get(0);
 	}
 
 

@@ -25,7 +25,7 @@ public class MyDialogBox extends DialogBox {
 		
 		this.kCont = kickCont;
 		
-		setText("Hello, DialogBox Title");
+		setText("☆Login");
 		
 		VerticalPanel panel = new VerticalPanel();
 		

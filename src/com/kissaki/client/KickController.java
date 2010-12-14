@@ -3,9 +3,11 @@ package com.kissaki.client;
 
 import java.util.Arrays;//array
 import java.util.List;//list
+import java.util.Map;
 import java.util.Random;
 
 
+import com.gargoylesoftware.htmlunit.javascript.host.Comment;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.UmbrellaException;
 import com.google.gwt.http.client.URL;
@@ -18,16 +20,23 @@ import com.google.gwt.json.client.JSONValue;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
+import com.kissaki.client.canvasController.CanvasController;
 import com.kissaki.client.channel.Channel;
 import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
+import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.itemDataModel.ItemDataModel;
 import com.kissaki.client.login.MyDialogBox;
+import com.kissaki.client.procedure.CommentDialogBox;
+import com.kissaki.client.procedure.ItemDialogBox;
+import com.kissaki.client.procedure.UserInformationViewController;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEvent;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 import com.kissaki.client.userStatusController.UserStatusController;
+import com.kissaki.client.userStatusController.userDataModel.ClientSideRequestQueueModel;
 
 /**
  * アプリケーションのコントローラ
@@ -35,9 +44,15 @@ import com.kissaki.client.userStatusController.UserStatusController;
  *
  */
 public class KickController {
+	
 	Debug debug = null;
 	
+	CanvasController cCont;
 	ScreenEventRegister reg;
+	
+	
+	String DEFAULT_REQUEST_PASS = "http://a";
+	
 	
 	UserStatusController uStCont = null;
 	
@@ -53,9 +68,13 @@ public class KickController {
 	static final int STATUS_KICK_LOGIN_PROC = STATUS_KICK_LOGIN_INIT+1;
 	static final int STATUS_KICK_LOGIN_SUCCEEDED = STATUS_KICK_LOGIN_PROC+1;
 	
-	static final int STATUS_KICK_EXEC_INIT = STATUS_KICK_LOGIN_SUCCEEDED+1;
-	static final int STATUS_KICK_EXEC_PROC = STATUS_KICK_EXEC_INIT+1;
-	static final int STATUS_KICK_OUTED_INIT = STATUS_KICK_EXEC_PROC+1;
+	static final int STATUS_KICK_OWN_INIT = STATUS_KICK_LOGIN_SUCCEEDED+1;
+	static final int STATUS_KICK_OWN_PROC = STATUS_KICK_OWN_INIT+1;
+	
+	static final int STATUS_KICK_OWNERS_INIT = STATUS_KICK_OWN_PROC+1;
+	static final int STATUS_KICK_OWNERS_PROC = STATUS_KICK_OWNERS_INIT+1;
+	
+	static final int STATUS_KICK_OUTED_INIT = STATUS_KICK_OWNERS_PROC+1;
 	static final int STATUS_KICK_OUTED_PROC = STATUS_KICK_OUTED_INIT+1;
 	
 	
@@ -74,12 +93,7 @@ public class KickController {
 		debug.trace("コンストラクタに到達");
 		uStCont = new UserStatusController();//Ginから取得出来るといいな。
 		
-		if (false) {
-			/*{"channelID":"channel-m2fdj8-master","userData":{"itemKeys":[],"key":{"complete":true,"id":0,"kind":"user","name":"test@test","namespace":"","parent":null},"m_userName":"test","m_userPass":"test","m_userStatus":0}}
-			 */
-			String jsonString = "{\"channelID\":\"channel-m2fdj8-master\",\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}}";
-			parseJsonString(jsonString);
-		}
+		
 		
 		debug.trace("status_"+uStCont.getUserStatus());
 		debug.trace("name_"+uStCont.getUserName());
@@ -124,8 +138,9 @@ public class KickController {
 			 * ログイン画面を出す。
 			 */
 			try {
-				HTML loginView = new HTML("Login");
-				reg.fireEvent(new ScreenEvent(1, loginView));
+				Image image = new Image();
+				image.setUrl(Resources.INSTANCE.arrow().getURL());
+				reg.fireEvent(new ScreenEvent(1, image));
 				
 				//現在このユーザがログインしているのかどうか、知らない。知りにいかないと行けないが、さて？
 				//サイトに入ったら、すぐ通知を受け付ける事が出来る。どのページからでも、自由にログイン出来る。こういう強みはある。
@@ -142,7 +157,7 @@ public class KickController {
 //
 						final MyDialogBox diag = new MyDialogBox(this);
 						diag.show();
-						diag.center();
+						diag.center();	
 //					}
 //				});
 //
@@ -168,6 +183,10 @@ public class KickController {
 				debug.trace("e_"+e.getCauses());
 			}
 			
+			if (exec.matches("No Match..")) {
+				debug.trace("間違えました");
+			}
+			
 			setKickStatus(STATUS_KICK_LOGIN_PROC);
 			
 		case STATUS_KICK_LOGIN_PROC:
@@ -177,25 +196,26 @@ public class KickController {
 				String nameWithPass = uStCont.getUserName()+":"+uStCont.getUserPass();
 				debug.trace("nameWithPass_"+nameWithPass);
 				
+				//現在うつってる物を、送信する予定としてリクエストに加えておく TODO DEFAULT_REQUEST_PASSを固定で送ってる、このサイトのコレのアドレス、という形で。
+				uStCont.addRequestToRequestQueue(DEFAULT_REQUEST_PASS, ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
+				
+					
 				//サーバサイドにユーザー名とパスを送る
 				greetingService.greetServer("userLogin+"+nameWithPass+"",
 						new AsyncCallback<String>() {
 					public void onFailure(Throwable caught) {
 						debug.trace("failure");
 					}
-
+					
 					public void onSuccess(String result) {
 						debug.trace("onSuccess_result_"+result);
 						if (result.matches("ログインパスワードが違います")) {//やりなおし
 							setKickStatus(STATUS_KICK_LOGIN_INIT);
-							procedure("");
+							procedure("No Match..");
 						} else {
 							setKickStatus(STATUS_KICK_LOGIN_SUCCEEDED);
 							procedure("Channel_Open:"+result);
 						}
-						
-						
-						
 					}
 				}
 				);
@@ -217,38 +237,89 @@ public class KickController {
 				
 				//ここで遷移がぶっちぎれて、Channelだよりになる。
 			}
+			
 			break;
 			
 			/*
 			 * channel接続が通った状態
 			 */
-		case STATUS_KICK_EXEC_INIT:
-			
-			setKickStatus(STATUS_KICK_EXEC_PROC);
-			
-			//ユーザーのキーでいろいろやる
-			
-			//Jsonでクエリー構築しよう
+		case STATUS_KICK_OWN_INIT:
+			uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+			setKickStatus(STATUS_KICK_OWN_PROC);
 			/*
 			 * ユーザーキーと所持アイテムのキーで召還する。
 			 * キューにためておいた通信を行う。そんだけ。
 			 */
-			String userKey = uStCont.getUserKey();
-			procQueExecute(userKey);
+			procQueExecute(uStCont.getUserKey());
 			
 			
 			//ローディング画面表示する
-			initCanvas();
+			cCont = new CanvasController(this);
+			cCont.initCanvas();
+			reg.fireEvent(new ScreenEvent(1, cCont.canvas()));
 			
-			
-		case STATUS_KICK_EXEC_PROC:
+		case STATUS_KICK_OWN_PROC:
 			//アイテムを表示する
 			if (exec.matches("アイテム取得開始")) {
 				//描画のアップデートを行う、、モデルの件数みてがんばればいいかな。
 				debug.trace("アイテム取得が開始しました");
 			}
 			
+			if (exec.startsWith("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
+				debug.trace("ItemUpdatedに来てる");
+				cCont.updateItemcInfo(uStCont.getCurrentItems());
+			}
+			
+			
+			if (exec.startsWith("TagUpload+")) {
+				//アイテムのキーと加算したタグの内容と加算した主のキーの合算をサーバに渡す
+				//そしたらサーバ側で、タグ情報が構築され、そのタグのキーがアイテムに追加される
+				
+				String key = exec.substring("TagUpload+".length(),  exec.length());
+				
+				JSONObject itemKeyWithNewTagWithMyKey = JSONParser.parseStrict(key).isObject();
+				itemKeyWithNewTagWithMyKey.put("userKey", uStCont.getUserKey());
+				
+				uStCont.addRequestToRequestQueue(itemKeyWithNewTagWithMyKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG);
+				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+			}
+			
+			/*
+			 * アイテムがタッチされたら、そのコメント一覧へ
+			 * 所有者の情報で、だれがどんなタグ付けてるか欲しいので、見に行く。
+			 */
+			if (exec.startsWith("ItemTapped+")) {
+				setKickStatus(STATUS_KICK_OWN_INIT);
+				//ロードするアイテムのキーを受け取り、コメントの情報を表示する
+				String key = exec.substring("ItemTapped+".length(),  exec.length());
+				procedure("LoadingOwnersOfItem+"+key);
+				
+				//画面の片付けとか行う
+			}
+			
 			break;
+			
+			/*
+			 * アイテムのコメント情報を収集する
+			 * (、、必要がある、のか？　このアイテムについてのコメントは、このアイテムに着いている。)
+			 */
+		case STATUS_KICK_OWNERS_INIT:
+			if (exec.startsWith("LoadingOwnersOfItem+")) {
+				setKickStatus(STATUS_KICK_OWNERS_PROC);
+			}
+			
+		case STATUS_KICK_OWNERS_PROC:
+			if (exec.matches("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
+				cCont.updateItemcInfo(uStCont.getCurrentItems());
+			}
+			
+			/*
+			 * アイテムがタッチされたら、その所有者一覧へ
+			 */
+			
+			
+			break;
+			
 			
 		case STATUS_KICK_OUTED_INIT:
 			setKickStatus(STATUS_KICK_OUTED_PROC);
@@ -263,43 +334,265 @@ public class KickController {
 			break;
 		}
 		
-		if (exec.startsWith("encodedData:")) {
-			String encodedData = exec.substring("encodedData:".length(), exec.length());
-			debug.trace("どうなんだろう_"+encodedData);
-			
-			getItem(encodedData);
+		
+		
+		//////////チャンネルゾーン
+		
+		
+		
+		/*
+		 * ユーザーのデータの更新を受け付ける
+		 * いつでも、、、、
+		 * 最大深度のすげ替え
+		 */
+		if (exec.startsWith("UserItemCurrent+")) {
+			String newArrivalItemData = exec.substring("UserItemCurrent+".length(), exec.length());
+			uStCont.compareItemData(newArrivalItemData);
+		}
+		
+		
+		
+		
+		/*
+		 * サーバからのPush通信を受け取る部分
+		 */
+		if (exec.startsWith("push+")) {
+			pushedExecute(exec);
 		}
 	}
 	
 	
 	/**
+	 * プッシュを受けての挙動を行う
+	 * @param exec
+	 */
+	private void pushedExecute(String exec) {
+		String data = exec.substring("push+".length(), exec.length());
+		
+		debug.trace("解析スタート");
+		
+		JSONObject root = null;
+		JSONString command = null;
+		JSONString value = null;
+		
+		String commandString = null;
+		
+		if (JSONParser.parseStrict(data).isObject() != null) {
+			debug.trace("root作成");
+			root = JSONParser.parseStrict(data).isObject();
+		}
+		try {
+		if (root != null) {
+			debug.trace("rootがある_"+root);
+			command = root.get("command").isString();
+			debug.trace("command_"+command);
+		}
+		} catch (Exception e) {
+			debug.trace("error?_"+e);
+		}
+		
+		if (command != null) {
+			debug.trace("command != null");
+			commandString = command.toString();
+		}
+		
+		debug.assertTrue(commandString != null, "commandStringがnullです");
+		
+		
+		
+		if (commandString.contains("TAG_CREATED")) {
+			debug.trace("TAG_CREATEDが発生");
+			//自分の持ってるアイテムのどれかにタグが足された筈ですが、pushで帰ってきます。口を開けて待ってなさい。
+		}
+		
+		if (commandString.contains("ITEM_ADDED_TO_USER")) {
+			
+			value = root.get("currentItemkey").isString();
+			//このリクエストが叶い、保存された、、はず。
+			
+			debug.trace("ITEM_ADDED_TO_USERに到達_"+value.toString());
+			
+			//今度は取得のリクエストをするのだ、か、ログイン処理をするか。
+			
+			uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ、、、うごくのかなーーーこれ、、、 最新を追い続ける仕様
+		}
+		
+		if (commandString.contains("ITEM_CREATED")) {
+			debug.trace("ITEM_CREATED_このアイテムが設定されました_"+value);
+			//アイテムのリクエストが終了したので、ステータスを変える
+		}
+		
+		/*
+		 * アイテムの受け取りが発生
+		 */
+		if (commandString.contains("PUSH_ITEM")) {
+			try {
+				JSONObject item = root.get("item").isObject();
+
+				debug.trace("PUSH_ITEM_item_"+item);
+				
+				if (item != null) {
+					//アイテムの主キーから、設定されていたリクエストを完了に指定する
+					String itemKeyNameString = null;
+					
+					JSONObject itemKeyObject = item.get("key").isObject();
+					JSONString itemKeyName = itemKeyObject.get("name").isString();
+					itemKeyNameString = itemKeyName.toString();
+					
+					debug.trace("itemKeyNameString_"+itemKeyNameString);
+					
+					uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
+					
+					
+					uStCont.putItemData(item);//こいつが監視できると最高。
+					procedure("ItemUpdated+");
+				}
+			} catch (Exception e) {
+				debug.trace("PUSH_ITEM_error_"+e);
+			}
+		}
+		
+		
+		if (commandString.contains("ITEM_ALREADY_OWN")) {
+			value = root.get("value").isString();
+			debug.trace("ITEM_ALREADY_OWN_このアイテムはすでにあなたによって所持されています_"+value);
+		}
+		
+		if (commandString.contains("ALREADY_ADDED_TO_USER")) {
+			value = root.get("value").isString();
+			debug.trace("ALREADY_ADDED_TO_USER_あなたのアイテムリストにアイテムが既に入っています_"+value);
+		}
+		
+		
+		if (commandString.contains("CURRENT_ITEM_DATA")) {
+			debug.trace("CURRENT_ITEM_DATA_root_"+root);
+			JSONObject obj = root.get("userOwnItems").isObject();
+			procedure("UserItemCurrent+"+obj.toString());
+		}
+		
+	}
+
+	
+
+	/**
 	 * キューの通信を実行する。
 	 * Asyncだから、チョッパやで終わる筈。
 	 * @param userKey
 	 */
-	private void procQueExecute(String userKey) {
-		String request = null;
+	private void procQueExecute(JSONObject userKey) {
+		Map<String,String> request = null;
 		
 		request = uStCont.executeQueuedRequest();
 		
 		while (request != null) {
-			debug.trace("このブロック開始");
-			greetingService.greetServer("getItemData+"+request,
-					new AsyncCallback<String>() {
-				public void onFailure(Throwable caught) {
-					debug.trace("failure");
-				}
-	
-				public void onSuccess(String result) {
-					debug.trace("success!_"+result);
-					procedure("アイテム取得開始");
-				}
+			debug.trace("request_"+request);
+			/*
+			 * アイテムからタグを取得する
+			 */
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_TAG_FROM_ITEM) != null) {
+				//アイテムについているタグを取得する
+				debug.assertTrue(false, "アイテムからタグを取得、未実装");
 			}
-			);
+			
+			
+			/*
+			 * 人物からタグを取得する
+			 */
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_TAG_FROM_PERSON) != null) {
+				//人物が持っているタグを取得する
+				debug.assertTrue(false, "人からタグを取得、未実装");
+			}
+			
+			/*
+			 * タグを加算する
+			 */
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG) != null) {
+				//タグがリクエストに並ぶ筈
+				debug.trace("REQUEST_TYPE_ADDNEWTAG_中身_"+request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG));
+				
+				String tagRequest = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG);
+				greetingService.greetServer("addTagToItemData+"+tagRequest,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("タグ付加完了");
+					}
+				}
+				);
+			}
+			
+			/*
+			 * アイテムを加算する
+			 */
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD) != null) {
+				String itemAddressKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
+				
+				//ここで、JSONにしてしまう
+				JSONObject itemAddressWithUserKey = new JSONObject();
+				
+				JSONValue itemValue = new JSONString(itemAddressKey);
+				itemAddressWithUserKey.put("itemAddressKey", itemValue);
+				itemAddressWithUserKey.put("userKey", userKey);
+				
+				
+				greetingService.greetServer("setItemData+"+itemAddressWithUserKey.toString(),
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+
+					public void onSuccess(String result) {
+						debug.trace("setItemData+success!_"+result);
+					}
+				}
+				);
+			}
+			
+			//アイテムを取得する
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET) != null) {
+				String itemKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET);
+				
+				greetingService.greetServer("getItemData+"+itemKey,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("アイテム取得開始");
+					}
+				}
+				);
+			}
+			
+			/*
+			 * ユーザーの所持データを取得する(自分のデータを取得し、かつ、誰々がなんか追加しましたというのをブロードキャストする用)
+			 */
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA) != null) {
+				String userKeyForCurrent = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+				greetingService.greetServer("getMyData+"+userKeyForCurrent,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("アイテム取得開始");
+					}
+				}
+				);
+			}
+			
 			
 			request = uStCont.executeQueuedRequest();//一件もなければnullを返す
 		}
-		debug.trace("到着、全件ロード開始");
 	}
 
 	/**
@@ -330,19 +623,24 @@ public class KickController {
 			
 			if (root.get("userData").isObject() != null) {
 				userData = root.get("userData").isObject();
+				debug.trace("userData_"+userData);
 			}
 		}
 		
 		if (userData != null) {
+			try {
 			if (userData.get("itemKeys").isArray() != null) {
 				userItemArray = userData.get("itemKeys").isArray();
 				debug.trace("size_"+userItemArray.size());
+			}
+			} catch (Exception e) {
+				debug.trace("userData.get(\"itemKeys\").isArray() != nullであれば出ない筈なんだけどer_"+e);
 			}
 			
 			if (userData.get("key").isObject() != null) {
 				JSONObject key = userData.get("key").isObject();
 				debug.trace("key_"+key);
-				uStCont.setUserKey(key.toString());
+				uStCont.setUserKey(key);
 			}
 		}
 		
@@ -356,7 +654,7 @@ public class KickController {
 		
 		uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
 		
-		setKickStatus(STATUS_KICK_EXEC_INIT);
+		setKickStatus(STATUS_KICK_OWN_INIT);
 		
 		if (channelID != null) {
 			setChannelID(channelID.toString());
@@ -367,10 +665,8 @@ public class KickController {
 		/*
 		 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
 		 */
-		if (userItemArray != null) setUpUserItemRequest(userItemArray);
-		
-		if (true) {
-			updateItemData("http://");
+		if (userItemArray != null) {
+			setUpUserItemRequest(userItemArray);
 		}
 	}
 
@@ -379,46 +675,12 @@ public class KickController {
 	 * @param jsonString
 	 */
 	private void setUpUserItemRequest(JSONArray userItemArray) {
-
-		//ここでアレイとして保存しておく。
-
 		
 		int size = userItemArray.size();
 		for (int i = 0; i < size; i++) {
-			JSONObject key = userItemArray.get(i).isObject();
-			debug.trace("key_"+key);
-			uStCont.addRequestToRequestQueue(key.toString());
-			
-			//キーは、このユーザーが持っている筈のもの、呼び水として使う。
-			/*
-			 * 寿命が非常に短いものがいいな。
-			 * リクエスト投げたら、消えるようなやつ。
-			 * ユーザーのリクエストキューにセットして、どんどん呼び出す、という形にしよう。
-			 * currentなユーザーのアイテムリクエストキュー。
-			 * 
-			 * このユーザーのアカウントに深く紐づいたDataModelがほしい。
-			 * どうやって実現するのがクールかな。
-			 * ユーザー名が切り替わるたびに死ぬとか、そういったのがいいな。
-			 * ユーザーをコンテキストとして動く、値の集団。
-			 * まあ、今は考慮のみ行う。
-			 * 
-			 * ユーザーコントローラーの中に、モデルを持とう。
-			 */
-			
-			
-//			//このIDについて、リクエストを投げる。
-//			greetingService.greetServer("getItemData+"+key,
-//					new AsyncCallback<String>() {
-//				public void onFailure(Throwable caught) {
-//					debug.trace("failure");
-//				}
-//
-//				public void onSuccess(String result) {
-//					debug.trace("success!_"+result);
-//					procedure("アイテム+_"+result+"_取得開始");
-//				}
-//			}
-//			);
+			JSONObject key = userItemArray.get(i).isObject();//ユーザーの所持している情報からキーを復号している、これは、ずれないでしょう。
+
+			uStCont.addRequestToRequestQueue(key.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET);
 		}
 
 	}
@@ -428,6 +690,7 @@ public class KickController {
 	 * JSONの構文分解。
 	 * テストしましょう。
 	 * @param jsonString
+	 * @return 
 	 */
 	public void parseJsonString(String jsonString) {
 		
@@ -502,7 +765,7 @@ public class KickController {
 		/**
 		 * 取得したキーでチャンネルを開く
 		 */
-		String channelIDUTF8String = URL.encode(result);//%22がついている。なんとかならないかな。
+		String channelIDUTF8String = URL.encode(result);//%22(")がついている。なんとかならないかな。
 		debug.trace("channelIDUTF8String_"+channelIDUTF8String);
 		channelIDUTF8String = channelIDUTF8String.substring(3,channelIDUTF8String.length()-3);
 		
@@ -521,11 +784,9 @@ public class KickController {
 			
 			public void onMessage(String encodedData) {
 				debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);
-				procedure("encodedData:"+encodedData);
+				procedure("push+"+encodedData);
 			}
-			
 		});
-		
 	}
 
 	
@@ -570,37 +831,6 @@ public class KickController {
 		procedure("login実行");
 	}
 	
-	int ix,iy = 2;
-	/**
-	 * pushで、サーバからアイテム情報が届いたときに処理する
-	 */
-	private void getItem (String encodedData) {
-//		uStContの内容を更新する
-		ix++; iy--;
-		updateCanvas(ix,iy);
-		if (iy == 0) {
-			iy = 2;
-		}
-	}
-	
-	void updateItemData (String itemNameKey) {
-		/*
-		 * 適当に登録する
-		 * ユーザー情報のkeyと、アイテム情報のkey(仮の名称)を作って、
-		 * アイテムをサーバにおく。
-		 */
-		greetingService.greetServer("setItemData+"+itemNameKey,
-				new AsyncCallback<String>() {
-			public void onFailure(Throwable caught) {
-				debug.trace("failure");
-			}
-
-			public void onSuccess(String result) {
-				debug.trace("setItemData+success!_"+result);
-			}
-		}
-		);
-	}
 	
 	
 	
@@ -608,26 +838,7 @@ public class KickController {
 	
 	
 	
-	ProcessingImplements p;
-
-	/**
-	 * キャンバスをセットする。
-	 */
-	private void initCanvas () {
 		
-		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
-		ScreenEventRegister reg = new ScreenEventRegister(canvas);
-		p = new ProcessingImplements(canvas.getElement(), "");
-		p.size("600","280","");
-	}
-	
-	private void updateCanvas (int x, int y) {
-		Random rand = new Random();
-//		p.c
-		p.color(""+rand.nextInt(255), ""+rand.nextInt(255), ""+rand.nextInt(255), "1");
-		p.ellipse(""+x*54, ""+y*90, ""+100, ""+100);
-	}
-	
 }
 
 

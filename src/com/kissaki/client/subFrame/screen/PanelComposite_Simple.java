@@ -23,17 +23,17 @@ public class PanelComposite_Simple extends Composite implements ScreenInterface 
 		debug.removeTraceSetting(Debug.DEBUG_EVENT_ON);//このクラスでは、デバッグをイベント表示しない。
 		
 		simplePanel = new SimplePanel();
-		initWidget(simplePanel);
+		initWidget(simplePanel);//この初期化メソッド自体が二個あるのが許容されてないようだ。
 		simplePanel.setSize("1000", "1000");
 	}
 	
 	public void setToMainPanel (Widget w) {
-		debug.trace("simplePanel_"+simplePanel);//末端から加えるのは無理、という事か。
+		debug.trace("simplePanel_"+simplePanel);
 		simplePanel.add(w);
 	}
 	
 	public void setToSubPanel (Widget w) {
-		
+		//レイヤー構造は無理っぽい。 
 	}
 
 	public void setToPanel(int id, Widget w) {

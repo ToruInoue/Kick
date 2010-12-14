@@ -1,6 +1,6 @@
 package com.kissaki.server.tagDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-10 19:05:03")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-14 20:26:11")
 /** */
 public final class TagDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.tagDataModel.TagDataModel> {
 

@@ -33,15 +33,18 @@ public class Channel {
 
 	public void sendMessage(String channelID, String content) {
 		// URIEncode
-		try {
-			content = URLEncoder.encode(content, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
+//		try {
+//			content = URLEncoder.encode(content, "UTF-8");
+//		} catch (UnsupportedEncodingException e) {
+//			throw new RuntimeException(e);
+//		}
 
 		ChannelMessage cm = 
 			new ChannelMessage(channelID,
-					"{\"content\":\"" + content + "\"}");
+//					"{\"content\":\"" + 
+					content
+//					+ "\"}"
+					);
 		cs.sendMessage(cm);
 	}
 }
