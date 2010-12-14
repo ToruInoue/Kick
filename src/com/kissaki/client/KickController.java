@@ -278,8 +278,7 @@ public class KickController {
 				debug.trace(uStCont.getUserName()+"_channel 開きました");
 				procedure("");
 			}
-
-
+			
 			public void onMessage(String encodedData) {
 				debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);//改行コードが入ってる。
 				procedure("encodedData:"+encodedData);
