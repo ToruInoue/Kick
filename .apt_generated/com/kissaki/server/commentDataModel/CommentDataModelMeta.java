@@ -1,6 +1,6 @@
 package com.kissaki.server.commentDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-15 03:04:36")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-17 02:00:41")
 /** */
 public final class CommentDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.commentDataModel.CommentDataModel> {
 
@@ -15,6 +15,9 @@ public final class CommentDataModelMeta extends org.slim3.datastore.ModelMeta<co
 
     /** */
     public final org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.commentDataModel.CommentDataModel, com.google.appengine.api.datastore.Key> m_commentMasterID = new org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.commentDataModel.CommentDataModel, com.google.appengine.api.datastore.Key>(this, "m_commentMasterID", "m_commentMasterID", com.google.appengine.api.datastore.Key.class);
+
+    /** */
+    public final org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.commentDataModel.CommentDataModel, com.google.appengine.api.datastore.Key> m_commentedBy = new org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.commentDataModel.CommentDataModel, com.google.appengine.api.datastore.Key>(this, "m_commentedBy", "m_commentedBy", com.google.appengine.api.datastore.Key.class);
 
     private static final CommentDataModelMeta slim3_singleton = new CommentDataModelMeta();
 
@@ -37,6 +40,7 @@ public final class CommentDataModelMeta extends org.slim3.datastore.ModelMeta<co
         model.setM_commentBody((java.lang.String) entity.getProperty("m_commentBody"));
         model.setM_commentDate((java.util.Date) entity.getProperty("m_commentDate"));
         model.setM_commentMasterID((com.google.appengine.api.datastore.Key) entity.getProperty("m_commentMasterID"));
+        model.setM_commentedBy((com.google.appengine.api.datastore.Key) entity.getProperty("m_commentedBy"));
         return model;
     }
 
@@ -52,6 +56,7 @@ public final class CommentDataModelMeta extends org.slim3.datastore.ModelMeta<co
         entity.setProperty("m_commentBody", m.getM_commentBody());
         entity.setProperty("m_commentDate", m.getM_commentDate());
         entity.setProperty("m_commentMasterID", m.getM_commentMasterID());
+        entity.setProperty("m_commentedBy", m.getM_commentedBy());
         return entity;
     }
 

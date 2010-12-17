@@ -1,6 +1,6 @@
 package com.kissaki.server.tagDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-15 03:04:36")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-16 20:44:19")
 /** */
 public final class TagDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.tagDataModel.TagDataModel> {
 
@@ -8,13 +8,13 @@ public final class TagDataModelMeta extends org.slim3.datastore.ModelMeta<com.ki
     public final org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, com.google.appengine.api.datastore.Key> key = new org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, com.google.appengine.api.datastore.Key>(this, "__key__", "key", com.google.appengine.api.datastore.Key.class);
 
     /** */
-    public final org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key> m_TagOwnerItemList = new org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key>(this, "m_TagOwnerItemList", "m_TagOwnerItemList", java.util.List.class);
-
-    /** */
     public final org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key> m_itemOwnerList = new org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key>(this, "m_itemOwnerList", "m_itemOwnerList", java.util.List.class);
 
     /** */
     public final org.slim3.datastore.StringAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel> m_tagName = new org.slim3.datastore.StringAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel>(this, "m_tagName", "m_tagName");
+
+    /** */
+    public final org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key> m_tagOwnerItemList = new org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.tagDataModel.TagDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key>(this, "m_tagOwnerItemList", "m_tagOwnerItemList", java.util.List.class);
 
     private static final TagDataModelMeta slim3_singleton = new TagDataModelMeta();
 
@@ -34,9 +34,9 @@ public final class TagDataModelMeta extends org.slim3.datastore.ModelMeta<com.ki
     public com.kissaki.server.tagDataModel.TagDataModel entityToModel(com.google.appengine.api.datastore.Entity entity) {
         com.kissaki.server.tagDataModel.TagDataModel model = new com.kissaki.server.tagDataModel.TagDataModel();
         model.setKey(entity.getKey());
-        model.setM_TagOwnerItemList(toList(com.google.appengine.api.datastore.Key.class, entity.getProperty("m_TagOwnerItemList")));
         model.setM_itemOwnerList(toList(com.google.appengine.api.datastore.Key.class, entity.getProperty("m_itemOwnerList")));
         model.setM_tagName((java.lang.String) entity.getProperty("m_tagName"));
+        model.setM_tagOwnerItemList(toList(com.google.appengine.api.datastore.Key.class, entity.getProperty("m_tagOwnerItemList")));
         return model;
     }
 
@@ -49,9 +49,9 @@ public final class TagDataModelMeta extends org.slim3.datastore.ModelMeta<com.ki
         } else {
             entity = new com.google.appengine.api.datastore.Entity(kind);
         }
-        entity.setProperty("m_TagOwnerItemList", m.getM_TagOwnerItemList());
         entity.setProperty("m_itemOwnerList", m.getM_itemOwnerList());
         entity.setProperty("m_tagName", m.getM_tagName());
+        entity.setProperty("m_tagOwnerItemList", m.getM_tagOwnerItemList());
         return entity;
     }
 

@@ -17,7 +17,7 @@ public class ItemDataModel {
 	 * アイテムに着いているタグリスト(Key)(タグは、一つのアイテムに対して着いたものとしてIDを振る。タグに対する情報はタグのIDに紐づく。)
 	 * コメントのリスト(コメントはアイテムに紐づく)
 	 */
-
+	
 	private String m_itemName;
 	private List<Key> m_ownerList;
 	private List<Key> m_tagList;
@@ -25,6 +25,7 @@ public class ItemDataModel {
 
 	@Attribute(primaryKey = true)
     private Key key;
+
 
 	public void setKey(Key key) {
 		this.key = key;

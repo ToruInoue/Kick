@@ -25,11 +25,17 @@ public class CanvasController {
 	Debug debug;
 	
 	List<ItemDialogBox> itemDialogBoxList;
-	
-	public CanvasController (KickController kickCont) {
+	JSONObject userKey;
+	/**
+	 * コンストラクタ
+	 * @param kickCont
+	 */
+	public CanvasController (KickController kickCont, JSONObject userKey) {
 		debug = new Debug(this);
 		kCont = kickCont;
 		itemDialogBoxList = new ArrayList<ItemDialogBox>();
+		this.userKey = userKey;
+		
 	}
 	
 	
@@ -112,10 +118,11 @@ public class CanvasController {
 				}
 			}
 			
-			ItemDialogBox itemDialog = new ItemDialogBox(kCont, currentModelReplica, 100,100);
+			ItemDialogBox itemDialog = new ItemDialogBox(kCont, userKey, currentModelReplica, 100,100);
 			itemDialogBoxList.add(itemDialog);
 		}
 	}
+
 
 	
 

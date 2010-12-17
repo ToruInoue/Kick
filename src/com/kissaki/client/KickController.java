@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Random;
 
 
-import com.gargoylesoftware.htmlunit.javascript.host.Comment;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.UmbrellaException;
 import com.google.gwt.http.client.URL;
@@ -31,8 +30,8 @@ import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.itemDataModel.ItemDataModel;
 import com.kissaki.client.login.MyDialogBox;
 import com.kissaki.client.procedure.CommentDialogBox;
+import com.kissaki.client.procedure.ItemCommentController;
 import com.kissaki.client.procedure.ItemDialogBox;
-import com.kissaki.client.procedure.UserInformationViewController;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEvent;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
@@ -51,7 +50,7 @@ public class KickController {
 	
 	CanvasController cCont;
 	ScreenEventRegister reg;
-	
+	ItemCommentController itemCommentCont;
 	
 	String DEFAULT_REQUEST_PASS = "http://a";
 	
@@ -256,7 +255,7 @@ public class KickController {
 			
 			
 			//ローディング画面表示する
-			cCont = new CanvasController(this);
+			cCont = new CanvasController(this,uStCont.getUserKey());
 			cCont.initCanvas();
 			reg.fireEvent(new ScreenEvent(1, cCont.canvas()));
 			
@@ -269,10 +268,10 @@ public class KickController {
 			
 			
 			
+			
 			if (exec.startsWith("ItemUpdated+")) {//アイテムが更新/加算されたので、再描画を行う
 				debug.trace("ItemUpdatedに来てる");
 				String itemDatas = exec.substring("ItemUpdated+".length(), exec.length());
-				
 				
 				JSONArray itemArray = JSONParser.parseStrict(itemDatas).isArray();
 				cCont.updateItemcInfo(itemArray);
@@ -317,21 +316,89 @@ public class KickController {
 			if (exec.startsWith("LoadingOwnersOfItem+")) {
 				setKickStatus(STATUS_KICK_OWNERS_PROC);
 				
-				String itemKey = exec.substring("LoadingOwnersOfItem".length(), exec.length());
+				String itemKey = exec.substring("LoadingOwnersOfItem+".length(), exec.length());
 				debug.trace("itemKey_"+itemKey);
 				//アイテムの情報を元に、
+				//チャット情報を集める
+				/*
+				 * アイテムの情報とユーザーの情報があるので、
+				 * ここから、アイテムを所持しているユーザーを集める。
+				 * 
+				 */
+//				アイテムのキーを元に、コメント情報を取得する。この画面は常に一発で更新する。
+				uStCont.addRequestToRequestQueue(itemKey, ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+				
+				
+				JSONObject itemKeyObject = JSONParser.parseStrict(itemKey).isObject();
+				JSONObject itemKey2 = itemKeyObject.get("itemKey").isObject();
+				itemCommentCont = new ItemCommentController(this, uStCont.getUserKey(), itemKey2);
+//				itemCommentCont.testInitialize();//テスト、適当に初期化
 			}
 			
 		case STATUS_KICK_OWNERS_PROC:
 			if (exec.matches("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
 				//cCont.updateItemcInfo(uStCont.getCurrentItems());
 			}
+			if (exec.startsWith("InputYourText+")) {
+				String textInput = exec.substring("InputYourText+".length(), exec.length());
+				debug.trace("コメント入力が有りました_"+textInput);
+				
+				
+				JSONObject commentWithItemKeyWithUserKey = JSONParser.parseLenient(textInput).isObject();
+				
+				uStCont.addRequestToRequestQueue(commentWithItemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
+				
+				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+			}
+			
+			
+			if (exec.startsWith("NoComment+")) {
+				debug.trace("自分のコメントが無いので、ウインドウを出す。");
+				
+				
+				itemCommentCont.addMyCommentPopup();//自分の情報、特に変わったポップを出す このアイテムの自分のもの、なので、コントローラーが持っている情報を使用する。
+			}
+			
+			if (exec.startsWith("ThereIsMyComment+")) {
+				debug.trace("自分のコメントがあったので、もしMyCommentDialogがあれば、引っ込めます。");
+				itemCommentCont.removeMyNewPop();
+			}
+			
+			if (exec.startsWith("CommentGet+")) {
+				String commentData = exec.substring("CommentGet+".length(), exec.length());
+				
+				//とどくのは、コメントのデータのJSON。
+
+				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
+				debug.trace("commentBlock_"+commentBlock);
+				
+				itemCommentCont.addComment(commentBlock);
+			}
+			
+			if (exec.startsWith("CommentSaved+")) {
+				String commentSavedRequest = exec.substring("CommentSaved+".length(), exec.length());
+				debug.trace("コメントのセーブを受け取ったので、リロードする_"+commentSavedRequest);
+				//アイテムのキーを出力して、読み出す
+				JSONObject value = JSONParser.parseStrict(commentSavedRequest).isObject();
+				JSONObject itemKey = new JSONObject();
+				itemKey.put("itemKey", value);
+				itemKey.put("userKey", uStCont.getUserKey());
+				
+				uStCont.addRequestToRequestQueue(itemKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+			}
+			
 			
 			/*
 			 * アイテムがタッチされたら、その所有者一覧へ
 			 */
 			if (exec.startsWith("ItemTapped+")) {
 				setKickStatus(STATUS_KICK_OWN_INIT);
+				
+				itemCommentCont.eraseAllComment();
+				itemCommentCont = null;
+				
 				debug.trace("exec_"+exec);
 			}
 			
@@ -364,20 +431,40 @@ public class KickController {
 		 */
 		if (exec.startsWith("UserItemCurrent+")) {
 			String newArrivalItemData = exec.substring("UserItemCurrent+".length(), exec.length());
-			JSONArray array = JSONParser.parseStrict(newArrivalItemData).isArray();
-			uStCont.compareItemData(array);
+			JSONArray owningItemKeyArray = JSONParser.parseStrict(newArrivalItemData).isArray();
 			
-			//もし差分があるようなら
-			List<ClientSideCurrentItemDataModel> originArray = uStCont.getCurrentItems();//ここで、差分だけ返すとか超かっけー
+			//失敗、アイテムデータの群れが来たと勘違いしちゃった。
+			//uStCont.compareItemData(array);
 			
-			JSONArray newArray = new JSONArray();
+			//もし差分があるようなら--このアイデアは無駄でした。取得してきていたのはユーザーが所持しているアイテムの最新のキー集であり、
+			//リクエストする元にこそなれ、現在持っているアイテムのデータと比較するものでは無かったのです。あはは。
+			//なので、比較するとしたら、現在持っている/まだもっていない/取得しようとしている、　などのリクエスト状況と照らし合わせ、
+			//既に持っていればタイムスタンプを送り込んで比較、
+			//今読み込み中であれば、返答が着たら比較するように仕向けるようセット、
+			//まだ持っていなければ取得用リクエストを書く、といった所でしょう。
+			//今回は、リクエストとの簡単な比較だけ行います。
 			
-			for (int i = 0; i < originArray.size(); i++) {//jsonArray化する
-				ClientSideCurrentItemDataModel currentModel = originArray.get(i);
-				newArray.set(i, currentModel.itemItself());
+			/*
+			 * リクエストと比較して、合致するものが無ければ追加する
+			 */
+			try {
+				uStCont.compareToCurrentRequest(owningItemKeyArray);
+			} catch (Exception e) {
+				debug.trace("error_"+e);
 			}
 			
-			procedure("ItemUpdated+"+newArray.toString());
+			
+			procQueExecute(uStCont.getUserKey());
+//			List<ClientSideCurrentItemDataModel> originArray = uStCont.getCurrentItems();//ここで、差分だけ返すとか超かっけー
+//			
+//			JSONArray newArray = new JSONArray();
+//			
+//			for (int i = 0; i < originArray.size(); i++) {//jsonArray化する
+//				ClientSideCurrentItemDataModel currentModel = originArray.get(i);
+//				newArray.set(i, currentModel.itemItself());
+//			}
+//			
+//			procedure("ItemUpdated+"+newArray.toString());
 		}
 
 		
@@ -427,11 +514,41 @@ public class KickController {
 		
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
+		if (commandString.contains("NO_COMMENT")) {
+			debug.trace("コメントデータが一件も無い_"+commandString);
+		}
 		
+		if (commandString.contains("THERE_IS_MY_COMMENT")) {
+			debug.trace("自分のコメント、あります。");
+			procedure("ThereIsMyComment+"+commandString);
+		}
+		
+		if (commandString.contains("NO_MY_DATA")) {
+			debug.trace("このアイテムに関しての自分のコメントデータが無い_"+commandString);
+			procedure("NoComment+"+commandString);
+		}
+		
+		if (commandString.contains("COMMENT_SAVED")) {
+			debug.trace("コメントデータが保存出来た_"+commandString);
+			JSONObject itemKey = root.get("requested").isObject();
+			procedure("CommentSaved+"+itemKey);
+			
+			
+		}
+		if (commandString.contains("COMMENT_DATA")) {
+			debug.trace("コメントデータをゲット_"+commandString);
+			JSONObject gotCommentData = root.get("wholeCommentData").isObject();
+			procedure("CommentGet+"+gotCommentData);
+		}
 		
 		if (commandString.contains("TAG_CREATED")) {
-			debug.trace("TAG_CREATEDが発生");
+			debug.trace("TAG_CREATEDが発生_"+commandString);
 			//自分の持ってるアイテムのどれかにタグが足された筈ですが、pushで帰ってきます。口を開けて待ってなさい。
+
+			//TODO タグリクエストの完了
+			//uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
+			
+			procedure("tagUpdated+"+commandString);//TODO このタグが更新されたので、要素を更新する、、、、のだが、まあ、ボタンなので、内容更新がめんどい。
 		}
 		
 		if (commandString.contains("ITEM_ADDED_TO_USER")) {
@@ -504,7 +621,7 @@ public class KickController {
 		}
 		
 		
-		if (commandString.contains("CURRENT_ITEM_DATA")) {
+		if (commandString.contains("CURRENT_ITEM_DATA")) {//即時更新は封印、
 			debug.trace("CURRENT_ITEM_DATA_root_"+root);
 			JSONArray array = root.get("userOwnItems").isArray();
 			procedure("UserItemCurrent+"+array.toString());
@@ -522,7 +639,7 @@ public class KickController {
 	private void procQueExecute(JSONObject userKey) {
 		Map<String,String> request = null;
 		
-		request = uStCont.executeQueuedRequest();
+		request = uStCont.getExecutableQueuedRequest();
 		
 		while (request != null) {
 			debug.trace("request_"+request);
@@ -628,9 +745,39 @@ public class KickController {
 				}
 				);
 			}
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT) != null) {
+				String addCommentObject = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
+				greetingService.greetServer("addCommentData+"+addCommentObject,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("アイテム取得開始");
+					}
+				}
+				);
+			}
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT) != null) {
+				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+				//所持ユーザーと、そのコメントを取得、更新があったら(=この返答があったら)逐一塗り替える。
+				greetingService.greetServer("getCommentData+"+itemKeyForGetComment,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("アイテム取得開始");
+					}
+				}
+				);
+			}
 			
-			
-			request = uStCont.executeQueuedRequest();//一件もなければnullを返す
+			request = uStCont.getExecutableQueuedRequest();//一件もなければnullを返す
 		}
 	}
 
@@ -872,6 +1019,14 @@ public class KickController {
 		inputUserPass(pass);
 		
 		procedure("login実行");
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public UserStatusController getUStCont() {
+		return uStCont;
 	}
 	
 	

@@ -68,6 +68,10 @@ public class UserStatusController {
 	public void setUserName(String name) {
 		m_userName = name;
 	}
+	
+	public int getUserImageNumber () {
+		return 1;
+	}
 
 
 	public String getUserPass() {
@@ -102,21 +106,23 @@ public class UserStatusController {
 	 * @param request
 	 */
 	public void addRequestToRequestQueue (String request, String requestTypeGet) {
-		m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));//既に同名の物があった場合どうなるのやら。
+		debug.trace("request_"+request);
+		m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));
+		debug.trace("request_inserted_"+request);
 	}
 	
 	/**
-	 * リクエストで未実行のものを実行する
+	 * リクエストで未実行のものを、Mapとして返す
 	 */
-	public Map<String,String> executeQueuedRequest () {
-		
+	public Map<String,String> getExecutableQueuedRequest () {
+		debug.trace("execute_retMap_start");
 		int i = 0;
 		//for (i = 0; i < m_uQueueModelMap.size(); i++) {
 		for (Iterator<ClientSideRequestQueueModel> qIteletor = m_rQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
 			ClientSideRequestQueueModel current = qIteletor.next();//m_uQueueModelMap.get(i);
 			if (current.isNotYet()) {
-				
-				//通信として実行する
+				debug.trace("current_"+current);
+				//通信として実行中の状態に設定する
 				current.setLoading();
 				
 				//ロード時の文字列を送る。
@@ -161,31 +167,7 @@ public class UserStatusController {
 		return m_iDataModelMap;
 	}
 
-	/**
-	 * 最新のアイテムデータをうけとり、それを現在のアイテムデータと比較、
-	 * 一致しなければ、一致しない部分について、
-	 * 
-	 * ・ユーザーのアイテムデータを更新
-	 * ・リクエストを再構成
-	 * ・再描画
-	 * 
-	 * 、、なんだけど、今は比較がめんどいから全とっかえで取得。
-	 * 
-	 * 
-	 * @param array
-	 */
-	public void compareItemData(JSONArray array) {
-		//JSONObject newItem = JSONParser.parseStrict(newArrivalItemData).isArray();
-		debug.trace("newArrivalItemData_"+array);
-		
-		//差分、でどうやって最大効率を出すかは、考えどころ。JSだし。
-		debug.trace("m_iDataModelMap_before_"+m_iDataModelMap.size());
-		eraseAllItemData();
-		
-		debug.trace("m_iDataModelMap_now_"+m_iDataModelMap.size());
-		putItemDataFromArray(array);
-		debug.trace("m_iDataModelMap_after_"+m_iDataModelMap.size());
-	}
+
 
 
 	/**
@@ -216,6 +198,40 @@ public class UserStatusController {
 		
 //		m_iDataModelMap = new ArrayList<ClientSideCurrentItemDataModel>();//奇麗さっぱり、、出来るかな？
 	}
+
+	/**
+	 * 最新の所持アイテムキーのアレイを受け取ったので、
+	 * 手持ちのものと比較して処理をセットする。
+	 * 
+	 * レイヤー状の処理が楽しい。
+	 * @param owningItemKeyArray
+	 */
+	public void compareToCurrentRequest(JSONArray owningItemKeyArray) {
+		//名前と合致するか確認し、合致するものが無ければ新規取得が必要なものとしてセットする。
+		//{"kind":"item", "id":0, "name":"http://a"}
+		for (int i = 0; i < owningItemKeyArray.size(); i++) {
+			JSONObject currentObject = owningItemKeyArray.get(i).isObject();
+			
+			String currentAddress_ = currentObject.toString();
+			debug.trace("currentAddress_"+currentAddress_);
+			for (Iterator<ClientSideRequestQueueModel> requestModelItel = m_rQueueModelMap.iterator(); requestModelItel.hasNext();) {
+				ClientSideRequestQueueModel currentModel = requestModelItel.next();
+				if (currentModel.getM_dataURL().equals(currentAddress_)) {//アドレス一致するものがある
+					//アドレス一致する = 含まれている
+					debug.trace("アドレスがすでにQueueに含まれている_"+currentAddress_);
+					return;
+				}
+				
+				if (!requestModelItel.hasNext()) {
+					//address = address.substring(1,currentAddress_.length()-1);
+					debug.trace("含まれていないので追加する_アドレスしか追加していないので、注意。"+currentAddress_);
+					addRequestToRequestQueue(currentAddress_, ClientSideRequestQueueModel.REQUEST_TYPE_GET);
+				}
+			}	
+		}
+	}
+
+
 
 
 

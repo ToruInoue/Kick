@@ -12,11 +12,11 @@ import com.kissaki.client.subFrame.debug.Debug;
 public class ClientSideCurrentItemDataModel {
 	Debug debug;
 	
-	private JSONObject m_itemdata;//この中に、名前とかキーとかアレイとかわんさか入ってる
+	private JSONObject m_itemdata;//この中に、名前とかキーとかアレイとかわんさか入ってる、、かと思ったら、キーしか入ってない！
 	
-	public ClientSideCurrentItemDataModel (JSONObject m_itemdata) {
+	public ClientSideCurrentItemDataModel (JSONObject itemdata) {
 		debug = new Debug(this);
-		this.m_itemdata = m_itemdata;
+		this.m_itemdata = itemdata;
 	}
 	
 	/**
@@ -43,38 +43,41 @@ public class ClientSideCurrentItemDataModel {
 	 * @return
 	 */
 	public JSONArray getTagArray() {
-		JSONArray array = new JSONArray();
+		JSONArray array = null;// = new JSONArray();
 		try {
-			array = m_itemdata.get("m_tagList").isArray();
+			debug.trace("元々_"+m_itemdata);
+			if (m_itemdata.get("m_tagList").isArray() != null) {
+				array = m_itemdata.get("m_tagList").isArray();
+			} else {
+				debug.trace("そもそもそんなもの無いっぽい_"+m_itemdata);
+				array = new JSONArray();
+			}
 		} catch (Exception e) {
 			debug.trace("getTagArray_"+e);
+			array = new JSONArray();
+			debug.trace("初期化で対応_"+array);
 		}
-		
-		if (array != null) {
-			return array;
-		}
-		return null;
+		debug.assertTrue(array != null, "getTagArrayの返答がnullになりそう");
+		return array;
 	}
-
 	
 	/**
 	 * アイテムキーを取得する
 	 * @return
 	 */
-	
 	public JSONObject getItemKey() {
 		JSONObject itemKey = m_itemdata.get("key").isObject();
 		return itemKey;
 	}
 	
+	public String getItemKeyName () {
+		String name = null;
+		name = getItemKey().get("name").isString().toString();
+		return name;
+	}
 	
 	public JSONObject itemItself () {
 		return m_itemdata;
 	}
-	
-	
-	
-	
-	
 	
 }

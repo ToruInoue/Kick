@@ -1,8 +1,11 @@
 package com.kissaki.server.userDataModel;
 
-//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-15 03:04:36")
+//@javax.annotation.Generated(value = { "slim3-gen", "@VERSION@" }, date = "2010-12-17 05:27:13")
 /** */
 public final class UserDataModelMeta extends org.slim3.datastore.ModelMeta<com.kissaki.server.userDataModel.UserDataModel> {
+
+    /** */
+    public final org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.userDataModel.UserDataModel, java.lang.Integer> imageNumber = new org.slim3.datastore.CoreAttributeMeta<com.kissaki.server.userDataModel.UserDataModel, java.lang.Integer>(this, "imageNumber", "imageNumber", int.class);
 
     /** */
     public final org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.userDataModel.UserDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key> itemKeys = new org.slim3.datastore.CollectionAttributeMeta<com.kissaki.server.userDataModel.UserDataModel, java.util.List<com.google.appengine.api.datastore.Key>, com.google.appengine.api.datastore.Key>(this, "itemKeys", "itemKeys", java.util.List.class);
@@ -36,6 +39,7 @@ public final class UserDataModelMeta extends org.slim3.datastore.ModelMeta<com.k
     @Override
     public com.kissaki.server.userDataModel.UserDataModel entityToModel(com.google.appengine.api.datastore.Entity entity) {
         com.kissaki.server.userDataModel.UserDataModel model = new com.kissaki.server.userDataModel.UserDataModel();
+        model.setImageNumber(longToPrimitiveInt((java.lang.Long) entity.getProperty("imageNumber")));
         model.setItemKeys(toList(com.google.appengine.api.datastore.Key.class, entity.getProperty("itemKeys")));
         model.setKey(entity.getKey());
         model.setM_userName((java.lang.String) entity.getProperty("m_userName"));
@@ -53,6 +57,7 @@ public final class UserDataModelMeta extends org.slim3.datastore.ModelMeta<com.k
         } else {
             entity = new com.google.appengine.api.datastore.Entity(kind);
         }
+        entity.setProperty("imageNumber", m.getImageNumber());
         entity.setProperty("itemKeys", m.getItemKeys());
         entity.setProperty("m_userName", m.getM_userName());
         entity.setProperty("m_userPass", m.getM_userPass());

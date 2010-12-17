@@ -20,6 +20,7 @@ public class CommentDataModel {
 	private Key m_commentMasterID;
 	private String m_commentBody;
 	private Date m_commentDate;
+	private Key m_commentedBy;
 	
 	@Attribute(primaryKey = true)
     private Key key;
@@ -54,6 +55,14 @@ public class CommentDataModel {
 
 	public Date getM_commentDate() {
 		return m_commentDate;
+	}
+
+	public void setM_commentedBy(Key m_commentedBy) {
+		this.m_commentedBy = m_commentedBy;
+	}
+
+	public Key getM_commentedBy() {
+		return m_commentedBy;
 	}
 	
 }

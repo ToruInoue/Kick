@@ -2,15 +2,21 @@ package com.kissaki.server;
 
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.activation.DataSource;
+import javax.jdo.datastore.DataStoreCache;
+
 import org.slim3.datastore.Datastore;
 
 import com.kissaki.client.GreetingService;
 import com.kissaki.client.subFrame.debug.Debug;
+import com.kissaki.server.commentDataModel.CommentDataModel;
+import com.kissaki.server.commentDataModel.CommentDataModelMeta;
 import com.kissaki.server.itemDataModel.ItemDataModel;
 import com.kissaki.server.itemDataModel.ItemDataModelMeta;
 import com.kissaki.server.tagDataModel.TagDataModel;
@@ -96,7 +102,267 @@ GreetingService {
 			return addTagToItemQualification(input);
 		}
 		
+		if (input.startsWith("addCommentData+")) {
+			return addCommentQualification(input);
+		}
+		
+		if (input.startsWith("getCommentData+")) {
+			return getCommentQualification(input);
+		}
+		
 		return "default";//HTTP_OKキーを返せばいい
+	}
+
+
+	/**
+	 * コメントを追加する
+	 * @param input
+	 * @return
+	 */
+	private String addCommentQualification(String input) {
+		String itemKeyStringOrigin = input.substring("addCommentData+".length(), input.length());
+		debug.trace("addCommentQualification_itemKeyString_"+itemKeyStringOrigin);
+		
+		/*
+		 * コメントを生成、アイテムに追加、アイテムをリロードさせる。
+		 * {"comment":"Kick here!", "userKey":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, "itemKey":{"kind":"item", "id":0, "name":"http://a"}}
+		 */
+		JSONObject rootObject = null;
+		//ここでID作成する必要があるのかな。あ、別にいいのか。このユーザーがこのときこのアイテムにコメントした内容？
+		//アイテムを取り出して、そこに無条件でコメントを加える
+		String commentString = null;
+		
+		JSONObject itemKeyObject = null;
+		String itemKeyString = null;
+		
+		JSONObject userKeyObject = null;
+		String userKeyString = null;
+		
+		JSONObject masterUserKeyObject = null;
+		String masterUserKeyString = null;
+		
+		try {
+			rootObject = new JSONObject(itemKeyStringOrigin);
+			commentString = rootObject.getString("comment");
+			
+			itemKeyObject = rootObject.getJSONObject("itemKey");
+			itemKeyString = itemKeyObject.getString("name").toString();
+			
+			userKeyObject = rootObject.getJSONObject("userKey");
+			userKeyString = userKeyObject.getString("name").toString();
+			
+			masterUserKeyObject = rootObject.getJSONObject("masterUserKey");
+			masterUserKeyString = masterUserKeyObject.getString("name").toString();
+			
+			debug.trace("userKeyString_"+userKeyString);
+		} catch (Exception e) {
+			debug.trace("addCommentQualification_error_"+e);
+		}
+		
+		Key masterUserKey = Datastore.createKey(UserDataModel.class, masterUserKeyString);
+		UserDataModelMeta masterUserMeta = UserDataModelMeta.get();
+		List<UserDataModel> masterUsers = Datastore.query(masterUserMeta)
+		.filter(masterUserMeta.key.equal(masterUserKey))
+		.asList();
+		UserDataModel currentMasterUserDataModel = null;
+		if (0 < masterUsers.size()) {//さすがに存在している筈だが、存在していないケースが考えられそう。
+			debug.assertTrue(masterUsers.size() == 1, "マスターに該当するのが一件以上ある");
+			currentMasterUserDataModel = Datastore.get(UserDataModel.class, masterUsers.get(0).getKey());
+		}
+		
+		
+		Key userKey = Datastore.createKey(UserDataModel.class, userKeyString);
+		UserDataModelMeta userMeta = UserDataModelMeta.get();
+		List<UserDataModel> users = Datastore.query(userMeta)
+		.filter(userMeta.key.equal(userKey))
+		.asList();
+		
+		UserDataModel currentUserDataModel = null;
+		if (0 < users.size()) {//さすがに存在している筈だが、存在していないケースが考えられそう。
+			debug.assertTrue(users.size() == 1, "一件以上ある");
+			currentUserDataModel = Datastore.get(UserDataModel.class, users.get(0).getKey());
+		}
+		if (currentUserDataModel == null) {
+			debug.assertTrue(false, "該当するユーザーが居ない");
+		}
+		
+		
+		Key itemKey = Datastore.createKey(ItemDataModel.class, itemKeyString);
+		ItemDataModelMeta itemMeta = ItemDataModelMeta.get();
+		List<ItemDataModel> items = Datastore.query(itemMeta)
+		.filter(itemMeta.key.equal(itemKey))
+		.asList();
+		ItemDataModel currentItem = null;
+		if (0 < items.size()) {//さすがに存在している筈だが、存在していないケースが考えられそう。
+			debug.assertTrue(items.size() == 1, "一件以上ある");
+			//コメントアレイをゲットしたら、そこにコメントを追加するのだが、idはコメントの件数によってつけるようにする。
+			currentItem = Datastore.get(ItemDataModel.class, items.get(0).getKey());
+		}
+		List<Key> commentKeyList = null;
+		Key commentKey = null;
+		if (currentItem != null) {
+			commentKeyList = currentItem.getM_commentList();
+			if (0 < commentKeyList.size()) {
+				//何件もあるはず、で、その最後尾に付け加えられればいいや。
+			} else if (commentKeyList.size() == 0) {
+				
+			}
+			
+			commentKey = Datastore.createKey(CommentDataModel.class, commentKeyList.size()+1);
+			//あるかないか、確認出来るが。
+			debug.trace("ここまでは来れる筈_"+commentString+"_"+commentKey);
+		}
+		
+		CommentDataModel currentCommentDataModel = null;
+		if (commentKey != null) {
+			//存在するコメントについて、調べる？　いいや、調べない。
+			
+			currentCommentDataModel = new CommentDataModel();
+			currentCommentDataModel.setKey(commentKey);
+			currentCommentDataModel.setM_commentBody(commentString);
+			currentCommentDataModel.setM_commentedBy(currentUserDataModel.getKey());
+			currentCommentDataModel.setM_commentMasterID(currentMasterUserDataModel.getKey());
+			
+			Datastore.put(currentCommentDataModel);
+			
+			currentItem.getM_commentList().add(currentCommentDataModel.getKey());
+			Datastore.put(currentItem);
+			debug.trace("コメント保存が出来た");
+			
+			Map<String, Object> map = new HashMap<String, Object>();
+			
+			map.put("requested", currentItem.getKey());
+			map.put("command", "COMMENT_SAVED");//アイテムのデータを更新するきっかけにする。
+			
+			String currentCommentData = gson.toJson(map);
+			channel.sendMessage(channelId, currentCommentData);
+		}
+		
+		
+		return "ok";
+	}
+
+
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	private String getCommentQualification(String input) {
+		String itemKeyString = input.substring("getCommentData+".length(), input.length());
+		debug.trace("itemKeyString_"+itemKeyString);
+		
+		//JSON化
+		JSONObject rootObject = null;
+		String itemKeyName = null;
+		String userKeyString = null;
+		String userKeyName = null;
+		try {
+			rootObject = new JSONObject(itemKeyString);
+			JSONObject itemKeyObject = rootObject.getJSONObject("itemKey");
+			itemKeyName = itemKeyObject.get("name").toString();
+			
+			
+			JSONObject userKeyObject = rootObject.getJSONObject("userKey");
+			userKeyName = userKeyObject.getString("name");
+			userKeyString = userKeyObject.toString();
+		} catch (JSONException e) {
+			debug.trace("getCommentQualification_error_"+e);
+		}
+		//.getJSONObject("userKey");
+		
+		Key itemKey = Datastore.createKey(ItemDataModel.class, itemKeyName);
+		
+		ItemDataModelMeta itemMeta = ItemDataModelMeta.get();
+		List<ItemDataModel> items = Datastore.query(itemMeta)
+		.filter(itemMeta.key.equal(itemKey))
+		.asList();
+		debug.trace("getCommentQualification_1");
+		
+		if (0 < items.size()) {
+			debug.assertTrue(items.size() == 1, "コメント取得時に、一意を期待して取得した、キーに該当するアイテムが一件以上存在する");
+			/*
+			 * このアイテムの所有者を取得、リクエスト元に送りつける
+			 */
+			ItemDataModel currentItem = Datastore.get(ItemDataModel.class, items.get(0).getKey());
+			//コメントを取得する
+			List<Key> commentKeyList = currentItem.getM_commentList();
+			
+			List<CommentDataModel> comments = null;
+			
+			//まずコメントの一覧を取得する
+			for (Iterator<Key> commentKeyItel = commentKeyList.iterator(); commentKeyItel.hasNext();) {
+				//このコメントをユーザーに届ける
+				Key currentCommentKey = commentKeyItel.next();
+				CommentDataModelMeta commentMeta = CommentDataModelMeta.get();
+				comments = Datastore.query(commentMeta)
+				.filter(commentMeta.key.equal(currentCommentKey))
+				.asList();
+			}
+			
+			if (comments == null) {//このアイテムに関するコメントは一件も無い
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("requested", rootObject);
+				map.put("command", "NO_COMMENT");
+				
+				String currentCommentData = gson.toJson(map);
+				debug.trace("一件も無い_"+currentCommentData);
+				channel.sendMessage(channelId, currentCommentData);
+			}
+			
+			boolean myself = false;
+			
+			if (comments != null) {
+				//ゲットし終わったら、コメントを取得
+				for (Iterator<CommentDataModel> commentItel = comments.iterator(); commentItel.hasNext();) {
+					CommentDataModel currentComment = commentItel.next();
+	//				private String m_commentBody;
+	//				private Date m_commentDate;
+					
+					Map<String, Object> map = new HashMap<String, Object>();
+	
+					map.put("requested", rootObject);
+					map.put("wholeCommentData", currentComment);
+//					map.put("commentMaster", currentComment.getM_commentMasterID());
+//					map.put("commentBody", currentComment.getM_commentBody());
+//					map.put("commentDate", currentComment.getM_commentDate());
+//					map.put("commentedBy", currentComment.getM_commentedBy());
+					map.put("command", "COMMENT_DATA");
+					
+					String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
+					debug.trace("userKeyName_"+userKeyName);
+					debug.trace("s_"+s);
+					String currentCommentData = gson.toJson(map);
+					debug.trace("コメントをユーザーに送信する");
+					channel.sendMessage(channelId, currentCommentData);
+					
+					
+					if (userKeyName.equals(s)) {//ユーザー名で判断する
+//						debug.trace("コメント書きの中に、自分が居た");
+						myself = true;
+//						
+//						Map<String, Object> innerMap = new HashMap<String, Object>();
+//						innerMap.put("command", "THERE_IS_MY_COMMENT");//自分の新規ウインドウがあったら、それを消す
+//						String currentMyselfData = gson.toJson(innerMap);
+//						channel.sendMessage(channelId, currentMyselfData);
+					}
+				}
+			}
+			
+			//自分がマスターであるアイテムが、無い、ということは、他にどんな要素があるんだろう？
+			
+			if (!myself) {
+//				Map<String, Object> map = new HashMap<String, Object>();
+//				map.put("command", "NO_MY_DATA");
+//				String currentCommentData = gson.toJson(map);
+//				channel.sendMessage(channelId, currentCommentData);
+			}
+		}
+		
+		
+		
+		return "ok";
 	}
 
 
@@ -107,7 +373,7 @@ GreetingService {
 	 */
 	private String getCurrentUserDataQualification(String input) {
 		input = input.substring("getMyData+".length(), input.length());
-		debug.trace("input_"+input);
+		debug.trace("getMyData__"+input);
 		
 		
 		Key userKey = null;
@@ -178,73 +444,116 @@ GreetingService {
 		String newTagKeyString = null;
 		
 		JSONObject taggingUserKeyObject = null;
+		String currentItemName = null;
+		String taggingUserNameString = null;
 		
 		try {
 			jsonDatas = new JSONObject(input);
 			newTaggedItemKeyObject = jsonDatas.getJSONObject("itemKey");
 			newTagNameString = jsonDatas.getString("newTag");
 			taggingUserKeyObject = jsonDatas.getJSONObject("userKey");
+			
+			currentItemName = newTaggedItemKeyObject.get("name").toString();
+			taggingUserNameString = taggingUserKeyObject.get("name").toString();
 		} catch (JSONException e) {
 			debug.trace("addTagToItemQualification_"+e);
 		}
 		
-		Key taggingUserKey = gson.fromJson(taggingUserKeyObject.toString(), Key.class);
+//		Key taggingUserKey = gson.fromJson(taggingUserKeyObject.toString(), Key.class);//gsonで作っちゃ駄目ということ。
 		
-		
-		newTagKeyString = newTagNameString;//タグ名でキーを作る。適当。　+"@"+newTaggedItemKeyObject.toString()
-		debug.trace("newTagKeyString_"+newTagKeyString);
+		newTagKeyString = newTagNameString;//アイテム名との組み合わせがいいな。
 		/*
 		 * {"itemKey":{"kind":"item", "id":0, "name":"http://a"}, "newTag":"aaaa", "userKey":{"kind":"user", "id":0, "name":"aaaa@bbbb"}}
 		 */
 		
-		currentTagkey = Datastore.createKey(TagDataModel.class, newTagKeyString);
+		
+		/*
+		 * 事前準備、ユーザーとアイテムの検索をしておく
+		 */
+		//タグ付けされたアイテムのキー
+		Key newTaggedItemKey = Datastore.createKey(ItemDataModel.class, currentItemName);
 
+		debug.trace("newTaggedItemKey_"+newTaggedItemKey.getName());
+		
+		List<ItemDataModel> items = null;
+		try {//該当するアイテムを探す
+			ItemDataModelMeta itemMeta = ItemDataModelMeta.get();
+			items = Datastore.query(itemMeta)
+			.filter(itemMeta.key.equal(newTaggedItemKey))
+			.asList(); 
+		} catch (Exception e) {
+			debug.trace("該当するアイテムを探す_"+e);
+		}
+		
+		ItemDataModel currentItemDataModel = null;
+		if (0 < items.size()) {
+			debug.assertTrue(items.size() == 1, "サイズが1ではない");
+			currentItemDataModel = Datastore.get(ItemDataModel.class, items.get(0).getKey());
+		}
+		
+		
+		Key newTagUserKey = Datastore.createKey(UserDataModel.class, taggingUserNameString);
+
+		List<UserDataModel> users = null;
+		try {//該当するアイテムを探す
+			UserDataModelMeta userMeta = UserDataModelMeta.get();
+			users = Datastore.query(userMeta)
+			.filter(userMeta.key.equal(newTagUserKey))
+			.asList(); 
+		} catch (Exception e) {
+			debug.trace("該当するユーザーを探す_"+e);
+		}
+		
+		UserDataModel currentUserDataModel = null;
+		if (0 < users.size()) {
+			debug.assertTrue(items.size() == 1, "サイズが1ではない");
+			currentUserDataModel = Datastore.get(UserDataModel.class, users.get(0).getKey());
+		}
+		
+		
+		currentTagkey = Datastore.createKey(TagDataModel.class, newTagKeyString);
 		/*
 		 * アイテムについてるタグ、ではなく、タグが世界中をまたぐ場合を考えたら、このアイテムとの連携が強いこの名前のタグ、という風になるのかな。
 		 * それとも、この名称のタグという集団になるのかな。
 		 * 
-		 * 今回は、このアイテムについているタグにだけ注目すればいいので、そうしてタグ名だけのキーにした。
-		 * 
+		 * 今回は、このアイテムについているタグをキーにしている。
 		 * 名前からは検索できるが、ヒットするのは他のアイテムについている同名のタグ、なんてこともあり得る。
-		 * 
 		 */
-		TagDataModelMeta meta = TagDataModelMeta.get();
-		List<TagDataModel> tags = Datastore.query(meta)
-		.filter(meta.key.equal(currentTagkey))//ドンピシャがあるか否か
+		TagDataModelMeta tagMeta = TagDataModelMeta.get();
+		List<TagDataModel> tags = Datastore.query(tagMeta)
+		.filter(tagMeta.key.equal(currentTagkey))//ドンピシャ
 		.asList(); 
 		
-		
-		//おなじ語句を入れたら引っかかるゆとり仕様(で、けっきょく同じアイテムのキーをもっているのであれば、という形になる。)
 		if (0 < tags.size()) {//同じキーを持った物は、存在しない筈。
 			debug.trace("currentTagkey_存在している_"+currentTagkey);
 			//複数個に対応していない
 			
 			TagDataModel currentTagDataModel = Datastore.get(TagDataModel.class, tags.get(0).getKey());//存在していたタグを引き出す
-			
 			List<Key> itemOwnerList = currentTagDataModel.getM_itemOwnerList();//このタグがついたアイテムがだれのもちものなのか、引き出す
 			
+			//タグをセットしにきているので、既にあれば、セットする必要は無いが、
+			//タグを付けたのが自分かどうか、という情報は欲しい。
 			
-			debug.trace("taggingUserKey_"+taggingUserKey);
-			
-			if (itemOwnerList.contains(taggingUserKey)) {//あんたの手元にこのタグもうあるじゃん
-				debug.trace("すでにこのアイテムについてのタグは所持されているby_"+taggingUserKey);
+			if (itemOwnerList.contains(currentUserDataModel.getKey())) {//あんたの手元にこのタグもうあるじゃん
+				debug.trace("すでにこのアイテムについてのタグは所持されているby_"+currentUserDataModel.getKey());
 				
 				JSONObject obj = new JSONObject();
 				try {
 					obj.put("command", "TAG_FOR_THIS_ITEM_ALREADY_OWN");
-					obj.put("value", taggingUserKey);
+//					obj.put("tagIdentity", arg1);
+//					obj.put("value", taggingUserKey);
 				} catch (Exception e) {
 					debug.trace("itemOwnerList.contains(taggingUserKey)_error_"+e);
 				}
 				channel.sendMessage(channelId, obj.toString());
 			} else {//まだあなたはこのタグを所持していない
-				currentTagDataModel.getM_itemOwnerList().add(taggingUserKey);//タグ所有者としての情報をタグに追加
+				currentTagDataModel.getM_itemOwnerList().add(currentUserDataModel.getKey());//タグ所有者としての情報をタグに追加
 				Datastore.put(currentTagDataModel);
 				
 				JSONObject obj = new JSONObject();
 				try {
 					obj.put("command", "TAG_TO_ITEM_OWNER_ADDED");
-					obj.put("value", taggingUserKey);
+//					obj.put("value", taggingUserKey);
 				} catch (Exception e) {
 					debug.trace("まだあなたはこのタグを所持していない_error_"+e);
 				}
@@ -255,39 +564,47 @@ GreetingService {
 		} else {
 			debug.trace("同名のタグが無い");
 			
+			//タグの情報をセーブ　　
 			TagDataModel newTagData = new TagDataModel();
-			
+			/*	private Key key;
+				private String m_tagName;
+				private List<Key> m_itemOwnerList;
+				private List<Key> m_tagOwnerItemList;//一件だけのアイテムの為に、リスト。
+			 */
 			newTagData.setKey(currentTagkey);
-			debug.trace("キーをセット_"+newTagData.getKey());
-			
-			debug.trace("リストを作成");
-			List<Key> taggedItemOwnList = new ArrayList<Key>();
-			taggedItemOwnList.add(taggingUserKey);//自分を加えておく
-			debug.trace("taggedItemOwnList_"+taggedItemOwnList.size());
-			newTagData.setM_itemOwnerList(taggedItemOwnList);
-			
-			debug.trace("所持アイテム情報を設定");
-			Key newTaggedItemKey = gson.fromJson(newTaggedItemKeyObject.toString(), Key.class);
-			debug.trace("newTaggedItemKey_"+newTaggedItemKey);
-			List<Key> taggedItemKeyList = new ArrayList<Key>();
-			taggedItemKeyList.add(newTaggedItemKey);
-			newTagData.setM_TagOwnerItemList(taggedItemKeyList);
-			
 			
 			newTagData.setM_tagName(newTagNameString);
-			try {
-			debug.trace("到達、タグがここで保存出来ない");
+			
+			List<Key> itemOwnerList = new ArrayList<Key>();//空のリストを作成してセット
+			itemOwnerList.add(currentUserDataModel.getKey());//貼った人の情報をセット、
+			newTagData.setM_itemOwnerList(itemOwnerList);
+			
+			List<Key> taggedItemOwnList = new ArrayList<Key>();//空のリストを作成してセット
+			taggedItemOwnList.add(currentItemDataModel.getKey());
+			newTagData.setM_tagOwnerItemList(taggedItemOwnList);
+			
+			debug.trace("モデルをセット");
 			Datastore.put(newTagData);
-			debug.trace("どうなってるのかな_");
+			debug.trace("セット完了");
+			
+			
+			try {
+				debug.trace("アイテムの情報にタグを設置");
+				currentItemDataModel.getM_tagList().add(newTagData.getKey());
+				Datastore.put(currentItemDataModel);
 			} catch (Exception e) {
-				debug.trace("どうなってるのかな_error_"+e);
+				debug.trace("error_"+e);
 			}
+			
+			//TODO　ユーザーの持ちタグ情報をユーザーに追加、するか、どうか。アイテムに紐づいてるから、アイテムを捨てるときに捨てればいいのだが。
 			
 			
 			JSONObject obj = new JSONObject();
 			try {
 				obj.put("command", "TAG_CREATED");
-				obj.put("value", taggingUserKey);
+				obj.put("value", newTagNameString);
+				obj.put("tagId", currentTagkey);
+				
 			} catch (Exception e) {
 				debug.trace("TAG_CREATED_error_"+e);
 			}
@@ -297,6 +614,8 @@ GreetingService {
 		
 		return "ok";
 	}
+
+
 
 
 	/**
@@ -398,7 +717,7 @@ GreetingService {
 				itemDataModel.setM_tagList(tagList);
 
 				Datastore.put(itemDataModel);
-				debug.trace("新規作成完了_"+itemAddressKey);
+				debug.trace("アイテム新規作成完了_"+itemAddressKey);
 
 				JSONObject obj = new JSONObject();
 				obj.put("command", "ITEM_CREATED");
@@ -455,7 +774,7 @@ GreetingService {
 		Key key = null;
 		//JSONからKeyを取得する。
 		String keySource = input.substring("getItemData+".length(), input.length());
-
+		
 		debug.trace("とりにきました_"+keySource);//きっとまたエンコードの問題
 		String itemKeyUTF8String = keySource;//myEncode(keySource);
 		
@@ -557,7 +876,10 @@ GreetingService {
 
 		String userName = userNameWithPass2[0];
 		String userPass = userNameWithPass2[1];
-
+		
+		
+		
+		
 		UserDataModelMeta meta = UserDataModelMeta.get();
 		List<UserDataModel> users = Datastore.query(meta)
 		.filter(meta.m_userName.equal(userName))
@@ -594,10 +916,16 @@ GreetingService {
 				}
 			} 
 		}
+		
+		UserDataModelMeta metaPre = UserDataModelMeta.get();
+		List<UserDataModel> usersPre = Datastore.query(metaPre)
+		.asList();
+		
 		//新規登録
 		Key key = Datastore.createKey(UserDataModel.class, createUserIdentity(userName,userPass));
 		UserDataModel uDataModel = new UserDataModel();
 		uDataModel.setKey(key);
+		uDataModel.setImageNumber(usersPre.size()+1);
 		uDataModel.setM_userName(userName);
 		uDataModel.setM_userPass(userPass);
 		Datastore.put(uDataModel);

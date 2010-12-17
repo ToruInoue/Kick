@@ -3,10 +3,13 @@ package com.kissaki.client.userStatusController.userDataModel;
 import java.util.HashMap;
 import java.util.Map;
 
+
 import com.kissaki.client.subFrame.debug.Debug;
 
 /**
  * このクライアントで、現在ユーザーが持っている通信を保持するキュー
+ * URLを直接キーとして使用する。
+ * 
  * @author ToruInoue
  *
  */
@@ -21,7 +24,9 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_ADD = "ADD_ITEM";
 	public final static String REQUEST_TYPE_GET = "GET_ITEM";
 	public final static String REQUEST_TYPE_UPDATE_MYDATA = "MY_CURRENT";
-
+	
+	public final static String REQUEST_TYPE_GETCOMMENT = "GET_COMMENT";
+	public final static String REQUEST_TYPE_ADDCOMMENT = "ADD_COMMENT";  
 	
 
 	Debug debug;
@@ -61,6 +66,7 @@ public class ClientSideRequestQueueModel {
 	}
 
 	public String getM_dataURL() {
+		debug.trace("m_dataURL_"+m_dataURL);
 		return m_dataURL;
 	}
 	

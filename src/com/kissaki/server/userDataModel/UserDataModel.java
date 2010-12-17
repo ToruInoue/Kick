@@ -20,6 +20,7 @@ public class UserDataModel {
 	private String m_userName;
 	private String m_userPass;
 	private int m_userStatus;
+	private int imageNumber;
 	private List<Key> itemKeys;
 	//ユーザー名、パスワード、ユーザーのログイン情報、アイテムのノードKeyを持つ
 	
@@ -69,6 +70,14 @@ public class UserDataModel {
 	
 	public void addtemKeys(Key itemKey) {
 		this.itemKeys.add(itemKey);
+	}
+
+	public void setImageNumber(int imageNumber) {
+		this.imageNumber = imageNumber;
+	}
+
+	public int getImageNumber() {
+		return imageNumber;
 	}
 	
 	

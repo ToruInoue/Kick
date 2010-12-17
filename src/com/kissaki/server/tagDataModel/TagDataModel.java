@@ -20,7 +20,7 @@ public class TagDataModel {
 
 	private String m_tagName;
 	private List<Key> m_itemOwnerList;
-	private List<Key> m_TagOwnerItemList;//一件だけのアイテムの為に、リスト。
+	private List<Key> m_tagOwnerItemList;//一件だけのアイテムの為に、リスト。
 	
 	
 	
@@ -50,12 +50,12 @@ public class TagDataModel {
 		return m_tagName;
 	}
 
-	public void setM_TagOwnerItemList(List<Key> m_ownerItemList) {
-		this.m_TagOwnerItemList = m_ownerItemList;
+	public void setM_tagOwnerItemList(List<Key> m_ownerItemList) {
+		this.m_tagOwnerItemList = m_ownerItemList;
 	}
 
-	public List<Key> getM_TagOwnerItemList() {
-		return m_TagOwnerItemList;
+	public List<Key> getM_tagOwnerItemList() {
+		return m_tagOwnerItemList;
 	}
 
 //	public String showInfo() {
