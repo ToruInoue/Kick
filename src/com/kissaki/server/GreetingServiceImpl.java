@@ -339,13 +339,13 @@ GreetingService {
 					
 					
 					if (userKeyName.equals(s)) {//ユーザー名で判断する
-//						debug.trace("コメント書きの中に、自分が居た");
+						debug.trace("コメント書きの中に、自分が居た");
 						myself = true;
-//						
-//						Map<String, Object> innerMap = new HashMap<String, Object>();
-//						innerMap.put("command", "THERE_IS_MY_COMMENT");//自分の新規ウインドウがあったら、それを消す
-//						String currentMyselfData = gson.toJson(innerMap);
-//						channel.sendMessage(channelId, currentMyselfData);
+						
+						Map<String, Object> innerMap = new HashMap<String, Object>();
+						innerMap.put("command", "THERE_IS_MY_COMMENT");//自分の新規ウインドウがあったら、それを消す
+						String currentMyselfData = gson.toJson(innerMap);
+						channel.sendMessage(channelId, currentMyselfData);
 					}
 				}
 			}
@@ -353,10 +353,14 @@ GreetingService {
 			//自分がマスターであるアイテムが、無い、ということは、他にどんな要素があるんだろう？
 			
 			if (!myself) {
-//				Map<String, Object> map = new HashMap<String, Object>();
-//				map.put("command", "NO_MY_DATA");
-//				String currentCommentData = gson.toJson(map);
-//				channel.sendMessage(channelId, currentCommentData);
+				debug.trace("自分がマスターになっているコメントが無い");
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("command", "NO_MY_DATA");
+				map.put("userKey", "NO_MY_DATA");
+				
+				String currentCommentData = gson.toJson(map);
+				channel.sendMessage(channelId, currentCommentData);
 			}
 		}
 		

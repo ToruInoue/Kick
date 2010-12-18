@@ -337,14 +337,19 @@ public class KickController {
 			}
 			
 		case STATUS_KICK_OWNERS_PROC:
+//			if (exec.startsWith("TagUpload+")) {
+////				入力された文字列を、自分がマスターの自分の言葉として足す
+//				//watch touch 
+//				String key = exec.substring("TagUpload+".length(),  exec.length());
+//			}
+			
 			if (exec.matches("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
 				//cCont.updateItemcInfo(uStCont.getCurrentItems());
 			}
+			
 			if (exec.startsWith("InputYourText+")) {
 				String textInput = exec.substring("InputYourText+".length(), exec.length());
 				debug.trace("コメント入力が有りました_"+textInput);
-				
-				
 				JSONObject commentWithItemKeyWithUserKey = JSONParser.parseLenient(textInput).isObject();
 				
 				uStCont.addRequestToRequestQueue(commentWithItemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
@@ -485,7 +490,7 @@ public class KickController {
 	private void pushedExecute(String exec) {
 		String data = exec.substring("push+".length(), exec.length());
 		
-		debug.trace("解析スタート");
+//		debug.trace("解析スタート");
 		
 		JSONObject root = null;
 		JSONString command = null;
@@ -494,33 +499,33 @@ public class KickController {
 		String commandString = null;
 		
 		if (JSONParser.parseStrict(data).isObject() != null) {
-			debug.trace("root作成");
+//			debug.trace("root作成");
 			root = JSONParser.parseStrict(data).isObject();
 		}
+		
 		try {
-		if (root != null) {
-			debug.trace("rootがある_"+root);
-			command = root.get("command").isString();
-			debug.trace("command_"+command);
-		}
+			if (root != null) {
+//				debug.trace("rootがある_"+root);
+				command = root.get("command").isString();
+			}
 		} catch (Exception e) {
 			debug.trace("error?_"+e);
 		}
 		
 		if (command != null) {
-			debug.trace("command != null");
+			debug.trace("command_"+command);
 			commandString = command.toString();
 		}
 		
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
 		if (commandString.contains("NO_COMMENT")) {
-			debug.trace("コメントデータが一件も無い_"+commandString);
+//			debug.trace("コメントデータが一件も無い_"+commandString);
 		}
 		
 		if (commandString.contains("THERE_IS_MY_COMMENT")) {
 			debug.trace("自分のコメント、あります。");
-			procedure("ThereIsMyComment+"+commandString);
+//			procedure("ThereIsMyComment+"+commandString);
 		}
 		
 		if (commandString.contains("NO_MY_DATA")) {

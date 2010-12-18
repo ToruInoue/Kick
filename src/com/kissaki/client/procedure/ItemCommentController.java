@@ -61,8 +61,6 @@ public class ItemCommentController {
 		
 		
 		debug.trace("更新_"+commentDialogList.size());
-		
-		
 		//来たデータが他人の物なので、足す。
 		String myName = kickCont.getUStCont().getUserKey().get("name").isString().toString();
 		if (!masterName.equals(myName)) {
@@ -108,8 +106,7 @@ public class ItemCommentController {
 				//それが自分のidで、かつ新規モードのものだったら、作り直しを行う。
 				if (currentMasterUserKey.get("name").toString().equals(myName) && currentCommentDialogBox.isFirstMode()) {
 					debug.trace("自分の新規のやつでした");
-					
-					currentCommentDialogBox.hide();//ここが効いてて、でも、、ってことは、なにか混乱が有るんだ。
+					currentCommentDialogBox.hide();//ここが効いてて、でも、、ってことは、なにか混乱が
 					commentDialogList.remove(currentCommentDialogBox);
 					
 					
@@ -131,22 +128,22 @@ public class ItemCommentController {
 				return;
 			}
 			
-//			if (!commentDialogItel.hasNext()) {
-//				debug.trace("このユーザーのコメントはまだ無いので、作る");
-//				//ゆっくりしていってね！
-//				Image image = new Image();
-//				image.setUrl(Resources.INSTANCE.s1().getURL());
-//				
-//				commentDialogList.add(
-//						new CommentDialogBox(
-//								kickCont, 
-//								itemKey,
-//								currentMasterUserKey, 
-//								image, 
-//								currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
-//						);
-//				showComments();
-//			}
+			if (!commentDialogItel.hasNext()) {
+				debug.trace("このユーザーのコメントはまだ無いので、作る");
+				//ゆっくりしていってね！
+				Image image = new Image();
+				image.setUrl(Resources.INSTANCE.s1().getURL());
+				
+				commentDialogList.add(
+						new CommentDialogBox(
+								kickCont, 
+								itemKey,
+								currentMasterUserKey, 
+								image, 
+								currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
+						);
+				showComments();
+			}
 		}
 		} catch (Exception e) {
 			debug.trace("addComment_"+e);
