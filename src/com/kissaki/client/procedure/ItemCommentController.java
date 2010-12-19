@@ -40,32 +40,7 @@ public class ItemCommentController {
 		this.itemKey = itemKeyObject;
 	}
 
-	/**
-	 * このアイテムに対して、コメント情報を追加する。
-	 * 誰 > コメント　というふうに振り分けられる。
-	 * @param commentBlock
-	 */
-	public void addComment(JSONObject commentBlock) {
-		debug.trace("commentBlock_"+commentBlock);
-		
-		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
-		String CommentMasterUserName = currentMasterUserKey.get("name").isString().toString();
-		debug.trace("CommentMasterUserName_"+CommentMasterUserName);
-		
-		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
-		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
-		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
-		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
-		
-		
-		//特定のユーザーについて、データモデルを更新する。表示内容のみという雑な状態なので、うーん、って感じだが、うーん。
-		//まずは、自分宛に来ているケースのみ処理する。
-		
-		//自分から来ているのは、誰かの掲示板に書き込んだケース。
-		addCommentTo(currentMasterUserKey, CommentMasterUserName, currentCommentBody,currentCommentDate, currentCommentedByString);
-		
-		debug.trace("更新_"+commentDialogList.size());
-	}
+	
 	
 	/**
 	 * 自分からの通信内容。おれ書き込んだよ、と。
@@ -76,9 +51,16 @@ public class ItemCommentController {
 	 * @param currentCommentDate
 	 * @param currentCommentedByString
 	 */
-	private void addCommentTo(JSONObject currentMasterUserKey, String commentMasterUserName,
-			String currentCommentBody, String currentCommentDate,
-			String currentCommentedByString) {
+	public void addCommentFromMyself(JSONObject commentBlock) {
+		
+		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
+		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
+		debug.trace("commentMasterUserName_"+commentMasterUserName);
+		
+		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
+		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
+		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
+		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
 		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
 		debug.trace("currentMyName_"+currentMyName+"/commentMasterUserName_"+commentMasterUserName);
@@ -97,6 +79,41 @@ public class ItemCommentController {
 			
 			
 	}
+	
+
+	/**
+	 * 他人からのコメントをさばく
+	 * @param commentBlock
+	 */
+	public void addCommentFromSomeone(JSONObject commentBlock) {
+		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
+		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
+		debug.trace("commentMasterUserName_"+commentMasterUserName);
+		
+		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
+		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
+		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
+		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
+		
+		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
+
+		//他人が自分のところに書き込んだ
+		if (currentMyName.equals(commentMasterUserName)) {
+			//すでに自分で自分に書いていて、ボードが存在しなければ書けない筈。なので、pop消しは行わない。
+			debug.trace("他人が俺のボードに何をする！");
+			
+			addCommentToOtherUserBoard(commentMasterUserName, currentCommentBody, currentCommentDate, currentCommentedByString);
+			
+		} else {//他人が他人のところに書き込んだ(他人にとって他人自身かどうかはどうでもいい)
+			//該当する他人の板をさがし、有れば上書き、無ければつくる。
+			debug.trace("このマスターのボードを探す_"+commentMasterUserName);
+			addUserBoardIfNeed(currentMasterUserKey, commentMasterUserName);
+			//他人から他人のボードに書き込んだ
+			addCommentToOtherUserBoard(commentMasterUserName, currentCommentBody, currentCommentDate, currentCommentedByString);
+		}
+		
+		
+	}	
 	
 
 	/**
@@ -244,24 +261,31 @@ public class ItemCommentController {
 	
 	
 
-	public void testInitialize() {
-		debug.trace("testInitialize");
-		JSONObject obj = new JSONObject();
-		obj.put("commentMaster", new JSONString("param_commentMaster"));
-		obj.put("itemKey", new JSONString("param_itemKey"));
-		
-		obj.put("commentBody", new JSONString("param_commentBody"));
-		obj.put("commentDate", new JSONString("param_commentDate"));
-		obj.put("commentedBy", new JSONString("param_commentedBy"));
-		
-		addComment(obj);
-	}
+	
 	
 	final int MODE_POP_YET = 1;
 	/**
 	 * 自分用のポップがまだ無い筈なので、新規ポップを出す
 	 */
 	public void addMyCommentPopup() {
+		
+		String myNameWithPass = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
+			
+		for (Iterator<CommentDialogBox> dialogBoxItel = commentDialogList.iterator(); dialogBoxItel.hasNext();) {
+			CommentDialogBox currentCommentDialogBox = dialogBoxItel.next();
+
+			if (currentCommentDialogBox.isFirstMode()) {
+				debug.trace("すでにpopが有るようなので、特に何もせず帰る");//自分のものしかpopを作らない、という前提が守られるのであれば、意味があるコード
+				return;
+			}
+			debug.trace("currentCommentDialogBox.getMasterUserNameWithPass()_"+currentCommentDialogBox.getMasterUserNameWithPass());
+			if (currentCommentDialogBox.getMasterUserNameWithPass().equals(myNameWithPass)) {//マスターが自分だったら、すでにあるので何もせず帰る
+				debug.trace("すでに本物が有るようなので、特に何もせず帰る");//自分のものしかpopを作らない、という前提が守られるのであれば、意味があるコード
+				return;
+			}
+		}
+		
+		debug.trace("addMyCommentPopup_"+kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart());
 		Image image = new Image();
 		image.setUrl(Resources.INSTANCE.s2().getURL());
 		commentDialogList.add(
@@ -287,7 +311,7 @@ public class ItemCommentController {
 			CommentDialogBox myCommentDialogBox = commentDialogList.get(i);
 			if (myCommentDialogBox.getMasterUserNameWithPass().equals(userName)) {
 				if (myCommentDialogBox.isFirstMode()) {
-					debug.trace("removeMyYetPanel_発見したので消します_"+userName);
+					debug.trace("removeMyYetPanel_発見したので消します_"+kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart());
 					myCommentDialogBox.hide();
 					commentDialogList.remove(myCommentDialogBox);
 					myCommentDialogBox = null;
@@ -295,5 +319,7 @@ public class ItemCommentController {
 				}
 			}
 		}
-	}	
+	}
+
+
 }

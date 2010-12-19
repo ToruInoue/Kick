@@ -123,9 +123,9 @@ public class CommentDialogBox extends PopupPanel {
 			String currentCommentDate, String currentCommentedBy) {
 		debug.trace("currentCommentBody_"+currentCommentBody+"_currentCommentDate_"+currentCommentDate+"/currentCommentedBy_"+currentCommentedBy);
 		int before = URL.decode(commentSpace.getText()).length();
-		int length = URL.decode(currentCommentBody+"@"+currentCommentedBy).length();
+		int length = URL.decode(currentCommentBody+" by "+currentCommentedBy).length();
 		commentSpace.setText(URL.decode(commentSpace.getText()
-				+ currentCommentBody+"@"+currentCommentedBy) +"\n");//改行が効くといいな。
+				+ currentCommentBody+" by "+currentCommentedBy) +"\n");//改行が効くといいな。
 //		commentSpace.setCursorPos(100);//意図と違う
 		commentSpace.setSelectionRange(before, length);//オートではスクロールしてくれませんね。
 		

@@ -313,7 +313,7 @@ GreetingService {
 	
 	
 	/**
-	 * 全件取得
+	 * 最近の１件取得
 	 * @param input
 	 * @return
 	 */
@@ -372,7 +372,7 @@ GreetingService {
 			
 			//TODO 酷いコードだ。Latestを取得出来るが、自分が書いたタイミングでのLatestでしかないし、なにより汚い。 最新を最新としてではなく受ける手法が必要。
 			
-			getCommentFromKeyList(comment, myself, userKeyName, rootObject);//最新の一件のみを取得
+			getLatestCommentFromKeyList(comment, myself, userKeyName, rootObject);//最新の一件のみを取得
 			
 			if (comment == null) {//このアイテムに関するコメントは一件も無い
 //				userKeyNameでユーザーを取得する
@@ -389,6 +389,62 @@ GreetingService {
 		}
 		
 		return "ok";
+	}
+
+	
+	/**
+	 * 最終のものだけを取得する
+	 * @param comment
+	 * @param myself
+	 * @param userKeyName
+	 * @param rootObject
+	 */
+	private void getLatestCommentFromKeyList(List<CommentDataModel> comment,
+			UserDataModel myself, String userKeyName, JSONObject rootObject) {
+		boolean thereIsMyself = false;
+		
+		if (comment != null) {
+			//ゲットし終わったら、コメントを取得
+			for (Iterator<CommentDataModel> commentItel = comment.iterator(); commentItel.hasNext();) {
+				CommentDataModel currentComment = commentItel.next();
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+
+				map.put("requested", rootObject);
+				map.put("wholeCommentData", currentComment);
+				map.put("command", "LATEST_COMMENT_DATA");
+				map.put("userInfo", myself.getKey());
+				
+				String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
+				
+				String currentCommentData = gson.toJson(map);
+				channel.sendMessage(channelId, currentCommentData);
+				
+				
+				if (userKeyName.equals(s)) {//ユーザー名で判断する
+					debug.trace("コメント書きの中に、自分が居た");
+					thereIsMyself = true;
+//					
+//					Map<String, Object> innerMap = new HashMap<String, Object>();
+//					innerMap.put("command", "THERE_IS_MY_COMMENT");
+//					innerMap.put("userInfo", myself.getKey());
+//					String currentMyselfData = gson.toJson(innerMap);
+//					channel.sendMessage(channelId, currentMyselfData);
+				}
+			}
+		}
+		
+		if (!thereIsMyself) {
+			debug.trace("自分がマスターになっているコメントが無い_"+myself.getKey());
+			Map<String, Object> map = new HashMap<String, Object>();
+			
+			map.put("command", "NO_MY_DATA");
+			map.put("userInfo", myself.getKey());
+
+			String currentCommentData = gson.toJson(map);
+			channel.sendMessage(channelId, currentCommentData);
+		}
+		
 	}
 
 
@@ -409,7 +465,7 @@ GreetingService {
 
 				map.put("requested", rootObject);
 				map.put("wholeCommentData", currentComment);
-				map.put("command", "COMMENT_DATA");
+				map.put("command", "ALL_COMMENT_DATA");
 				map.put("userInfo", myself.getKey());
 				
 				String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());

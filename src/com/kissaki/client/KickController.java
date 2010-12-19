@@ -376,7 +376,7 @@ public class KickController {
 				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
 				debug.trace("commentBlock_"+commentBlock);
 				
-				itemCommentCont.addComment(commentBlock);
+				itemCommentCont.addCommentFromMyself(commentBlock);
 			}
 			
 			if (exec.startsWith("SomeCommentGet+")) {//他人からのコメント
@@ -385,8 +385,13 @@ public class KickController {
 
 				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
 				debug.trace("commentBlock_"+commentBlock);
-				
-				//itemCommentCont.addComment(commentBlock);
+				/*
+				 * {"m_commentMasterID":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, 
+				 * "m_commentBody":"%E3%81%A9%E3%81%86%E3%81%8B%E3%81%AA", 
+				 * "m_commentedBy":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, 
+				 * "key":{"kind":"comment", "id":2}}
+				 */
+				itemCommentCont.addCommentFromSomeone(commentBlock);
 			}
 			
 			if (exec.startsWith("CommentSaved+")) {
@@ -562,25 +567,41 @@ public class KickController {
 			}
 		}
 		
-		if (commandString.contains("COMMENT_DATA")) {
+		/*
+		 * 最新コメントの受け取り
+		 */
+		if (commandString.contains("LATEST_COMMENT_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-				debug.trace("from自分なので、自分がリクエストした奴");
+				debug.trace(uStCont.getUserName()+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				debug.trace(uStCont.getUserName()+"_from自分なので、自分がリクエストした奴");
 				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
 				
 				debug.trace("コメントデータをゲット_"+commandString);
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
 				procedure("MyCommentGet+"+gotCommentData);
 			} else {
-				debug.trace("--------------------------------------------------------");
-				debug.trace("他人からのリクエストで、コメントデータが届いた_"+getUserNameFromUserKey(root));
+				debug.trace(uStCont.getUserName()+"--------------------------------------------------------");
+				debug.trace(uStCont.getUserName()+"_他人からのリクエストで、コメントデータが届いた_"+getUserNameFromUserKey(root));
 				
 				debug.trace("コメントデータをゲット_"+commandString);
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
 				procedure("SomeCommentGet+"+gotCommentData);
 			}
-			
-			
+		}
+		
+		
+		/*
+		 * 全体コメントの受け取り
+		 */
+		if (commandString.contains("ALL_COMMENT_DATA")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("from自分なので、自分がリクエストした奴");
+				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
+				
+				debug.trace("コメントデータをゲット_"+commandString);
+				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
+				procedure("MyCommentGet+"+gotCommentData);
+			}
 		}
 		
 		if (commandString.contains("TAG_CREATED")) {
