@@ -265,6 +265,16 @@ public class UserStatusController {
 	}
 
 
+	/**
+	 * ユーザー名とパスワードで、通信取得する先の内容と合致する物を用意する
+	 * "name@pass"
+	 * @return
+	 */
+	public String getUserNameWithPassAroundDoubleQuart() {
+		return "\""+getUserName()+"@"+getUserPass()+"\"";
+	}
+
+
 
 
 	

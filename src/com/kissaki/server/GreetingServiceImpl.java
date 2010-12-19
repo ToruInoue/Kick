@@ -104,8 +104,12 @@ GreetingService {
 			return addCommentQualification(input);
 		}
 		
-		if (input.startsWith("getCommentData+")) {
-			return getCommentQualification(input);
+		if (input.startsWith("getAllCommentData+")) {
+			return getAllCommentQualification(input);
+		}
+		
+		if (input.startsWith("getSingleCommentData+")) {
+			return getLatestCommentQualification(input);
 		}
 		
 		return "default";//HTTP_OKキーを返せばいい
@@ -228,12 +232,12 @@ GreetingService {
 
 
 	/**
-	 * 
+	 * 全件取得
 	 * @param input
 	 * @return
 	 */
-	private String getCommentQualification(String input) {
-		String itemKeyString = input.substring("getCommentData+".length(), input.length());
+	private String getAllCommentQualification(String input) {
+		String itemKeyString = input.substring("getAllCommentData+".length(), input.length());
 		debug.trace("itemKeyString_"+itemKeyString);
 		
 		//JSON化
@@ -250,7 +254,7 @@ GreetingService {
 			userKeyObject = rootObject.getJSONObject("userKey");
 			userKeyName = userKeyObject.getString("name");
 		} catch (JSONException e) {
-			debug.trace("getCommentQualification_error_"+e);
+			debug.trace("getCommentQualifi_error_"+e);
 		}
 		//.getJSONObject("userKey");
 		
@@ -260,41 +264,35 @@ GreetingService {
 		List<ItemDataModel> items = Datastore.query(itemMeta)
 		.filter(itemMeta.key.equal(itemKey))
 		.asList();
-		debug.trace("getCommentQualification_1");
 		
 		if (0 < items.size()) {
 			debug.assertTrue(items.size() == 1, "コメント取得時に、一意を期待して取得した、キーに該当するアイテムが一件以上存在する");
+			
+			UserDataModel myself = getUserModelFromKeyName(userKeyName);
+			
 			/*
-			 * このアイテムの所有者を取得、リクエスト元に送りつける
+			 * このアイテムの所有者を取得、リクエスト元/それ以外にブロードキャストで送りつける
 			 */
 			ItemDataModel currentItem = Datastore.get(ItemDataModel.class, items.get(0).getKey());
 			//コメントを取得する
 			List<Key> commentKeyList = currentItem.getM_commentList();
 			
-			List<CommentDataModel> comments = null;
+			List<CommentDataModel> comment = null;
 			
 			//まずコメントの一覧を取得する
 			for (Iterator<Key> commentKeyItel = commentKeyList.iterator(); commentKeyItel.hasNext();) {
 				//このコメントをユーザーに届ける
 				Key currentCommentKey = commentKeyItel.next();
 				CommentDataModelMeta commentMeta = CommentDataModelMeta.get();
-				comments = Datastore.query(commentMeta)
+				comment = Datastore.query(commentMeta)
 				.filter(commentMeta.key.equal(currentCommentKey))
 				.asList();
+				
+				getCommentFromKeyList(comment, myself, userKeyName, rootObject);
 			}
-			Key userKey = Datastore.createKey(UserDataModel.class, userKeyName);
-			UserDataModelMeta userMeta = UserDataModelMeta.get();
-			List<UserDataModel> users = Datastore.query(userMeta)
-			.filter(userMeta.key.equal(userKey))
-			.asList();
-			debug.assertTrue(users.size() == 1, "ユーザーが引っかかり過ぎ");
-			UserDataModel myself = Datastore.get(UserDataModel.class, users.get(0).getKey());
 			
-			if (comments == null) {//このアイテムに関するコメントは一件も無い
+			if (comment == null) {//このアイテムに関するコメントは一件も無い
 //				userKeyNameでユーザーを取得する
-				
-				
-				
 				
 				Map<String, Object> myNodataMap = new HashMap<String, Object>();
 				
@@ -305,57 +303,144 @@ GreetingService {
 				debug.trace("currentCommentData_"+currentCommentData);
 				channel.sendMessage(channelId, currentCommentData);
 			}
-			
-			boolean thereIsMyself = false;
-			
-			if (comments != null) {
-				//ゲットし終わったら、コメントを取得
-				for (Iterator<CommentDataModel> commentItel = comments.iterator(); commentItel.hasNext();) {
-					CommentDataModel currentComment = commentItel.next();
-					
-					Map<String, Object> map = new HashMap<String, Object>();
-	
-					map.put("requested", rootObject);
-					map.put("wholeCommentData", currentComment);
-					map.put("command", "COMMENT_DATA");
-					map.put("userInfo", myself.getKey());
-					
-					String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
-					
-					String currentCommentData = gson.toJson(map);
-					channel.sendMessage(channelId, currentCommentData);
-					
-					
-					if (userKeyName.equals(s)) {//ユーザー名で判断する
-						debug.trace("コメント書きの中に、自分が居た");
-						thereIsMyself = true;
-//						
-//						Map<String, Object> innerMap = new HashMap<String, Object>();
-//						innerMap.put("command", "THERE_IS_MY_COMMENT");
-//						innerMap.put("userInfo", myself.getKey());
-//						String currentMyselfData = gson.toJson(innerMap);
-//						channel.sendMessage(channelId, currentMyselfData);
-					}
-				}
-			}
-			
-			//自分がマスターであるアイテムが、無い、ということは、他にどんな要素があるんだろう？
-			
-			if (!thereIsMyself) {
-				debug.trace("自分がマスターになっているコメントが無い_"+myself.getKey());
-				Map<String, Object> map = new HashMap<String, Object>();
-				
-				map.put("command", "NO_MY_DATA");
-				map.put("userInfo", myself.getKey());
-
-				String currentCommentData = gson.toJson(map);
-				channel.sendMessage(channelId, currentCommentData);
-			}
 		}
 		
 		
 		
 		return "ok";
+	}
+	
+	
+	
+	/**
+	 * 全件取得
+	 * @param input
+	 * @return
+	 */
+	private String getLatestCommentQualification(String input) {
+		String itemKeyString = input.substring("getSingleCommentData+".length(), input.length());
+		debug.trace("getLatestCommentQualifi_itemKeyString_"+itemKeyString);
+		
+		//JSON化
+		JSONObject rootObject = null;
+		String itemKeyName = null;
+		JSONObject userKeyObject = null;
+		String userKeyName = null;
+		try {
+			rootObject = new JSONObject(itemKeyString);
+			JSONObject itemKeyObject = rootObject.getJSONObject("itemKey");
+			itemKeyName = itemKeyObject.get("name").toString();
+			
+			
+			userKeyObject = rootObject.getJSONObject("userKey");
+			userKeyName = userKeyObject.getString("name");
+		} catch (JSONException e) {
+			debug.trace("getLatestCommentQualifi_error_"+e);
+		}
+		//.getJSONObject("userKey");
+		
+		Key itemKey = Datastore.createKey(ItemDataModel.class, itemKeyName);
+		
+		ItemDataModelMeta itemMeta = ItemDataModelMeta.get();
+		List<ItemDataModel> items = Datastore.query(itemMeta)
+		.filter(itemMeta.key.equal(itemKey))
+		.asList();
+		
+		if (0 < items.size()) {
+			debug.assertTrue(items.size() == 1, "コメント取得時に、一意を期待して取得した、キーに該当するアイテムが一件以上存在する");
+			
+			UserDataModel myself = getUserModelFromKeyName(userKeyName);
+			
+			/*
+			 * このアイテムの所有者を取得、リクエスト元/それ以外にブロードキャストで送りつける
+			 */
+			ItemDataModel currentItem = Datastore.get(ItemDataModel.class, items.get(0).getKey());
+			//コメントを取得する
+			List<Key> commentKeyList = currentItem.getM_commentList();
+			
+			List<CommentDataModel> comment = null;
+			
+			//まずコメントの一覧を取得する
+			for (Iterator<Key> commentKeyItel = commentKeyList.iterator(); commentKeyItel.hasNext();) {
+				//このコメントをユーザーに届ける
+				Key currentCommentKey = commentKeyItel.next();
+				CommentDataModelMeta commentMeta = CommentDataModelMeta.get();
+				comment = Datastore.query(commentMeta)
+				.filter(commentMeta.key.equal(currentCommentKey))
+				.asList();
+			}
+			
+			//TODO 酷いコードだ。Latestを取得出来るが、自分が書いたタイミングでのLatestでしかないし、なにより汚い。 最新を最新としてではなく受ける手法が必要。
+			
+			getCommentFromKeyList(comment, myself, userKeyName, rootObject);//最新の一件のみを取得
+			
+			if (comment == null) {//このアイテムに関するコメントは一件も無い
+//				userKeyNameでユーザーを取得する
+				
+				Map<String, Object> myNodataMap = new HashMap<String, Object>();
+				
+				myNodataMap.put("userInfo", myself.getKey());
+				myNodataMap.put("command", "NO_COMMENT");
+				
+				String currentCommentData = gson.toJson(myNodataMap);
+				debug.trace("getLatestCommentQualifi_currentCommentData_"+currentCommentData);
+				channel.sendMessage(channelId, currentCommentData);
+			}
+		}
+		
+		return "ok";
+	}
+
+
+	/**
+	 * @param userKeyName 
+	 * @param myself 
+	 */
+	private void getCommentFromKeyList(List<CommentDataModel> comment, UserDataModel myself, String userKeyName, JSONObject rootObject) {
+		
+		boolean thereIsMyself = false;
+		
+		if (comment != null) {
+			//ゲットし終わったら、コメントを取得
+			for (Iterator<CommentDataModel> commentItel = comment.iterator(); commentItel.hasNext();) {
+				CommentDataModel currentComment = commentItel.next();
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+
+				map.put("requested", rootObject);
+				map.put("wholeCommentData", currentComment);
+				map.put("command", "COMMENT_DATA");
+				map.put("userInfo", myself.getKey());
+				
+				String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
+				
+				String currentCommentData = gson.toJson(map);
+				channel.sendMessage(channelId, currentCommentData);
+				
+				
+				if (userKeyName.equals(s)) {//ユーザー名で判断する
+					debug.trace("コメント書きの中に、自分が居た");
+					thereIsMyself = true;
+//					
+//					Map<String, Object> innerMap = new HashMap<String, Object>();
+//					innerMap.put("command", "THERE_IS_MY_COMMENT");
+//					innerMap.put("userInfo", myself.getKey());
+//					String currentMyselfData = gson.toJson(innerMap);
+//					channel.sendMessage(channelId, currentMyselfData);
+				}
+			}
+		}
+		
+		if (!thereIsMyself) {
+			debug.trace("自分がマスターになっているコメントが無い_"+myself.getKey());
+			Map<String, Object> map = new HashMap<String, Object>();
+			
+			map.put("command", "NO_MY_DATA");
+			map.put("userInfo", myself.getKey());
+
+			String currentCommentData = gson.toJson(map);
+			channel.sendMessage(channelId, currentCommentData);
+		}
 	}
 
 

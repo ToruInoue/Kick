@@ -48,9 +48,6 @@ public class ItemCommentController {
 	public void addComment(JSONObject commentBlock) {
 		debug.trace("commentBlock_"+commentBlock);
 		
-//			{"m_commentMasterID":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, "m_commentBody":"Kick here!s", "m_commentedBy":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, "key":{"kind":"comment", "id":3}}
-
-			//ユーザーキーの一致から、足すべきコメント先ダイアログを見つける
 		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
 		String CommentMasterUserName = currentMasterUserKey.get("name").isString().toString();
 		debug.trace("CommentMasterUserName_"+CommentMasterUserName);
@@ -58,7 +55,7 @@ public class ItemCommentController {
 		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
 		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
-		String currentCommentedByString = currentCommentedBy.toString();
+		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
 		
 		
 		//特定のユーザーについて、データモデルを更新する。表示内容のみという雑な状態なので、うーん、って感じだが、うーん。
@@ -68,90 +65,6 @@ public class ItemCommentController {
 		addCommentTo(currentMasterUserKey, CommentMasterUserName, currentCommentBody,currentCommentDate, currentCommentedByString);
 		
 		debug.trace("更新_"+commentDialogList.size());
-		//来たデータが他人の物なので、足す。
-//		String myName = kickCont.getUStCont().getUserKey().get("name").isString().toString();
-//		if (!masterName.equals(myName)) {
-//			debug.trace("自分以外のユーザーの書き込み版が飛んできた");
-//			debug.trace("このユーザーのコメントはまだ無いので、作る");
-//			//ゆっくりしていってね！
-//			Image image = new Image();
-//			image.setUrl(Resources.INSTANCE.s1().getURL());
-//			
-//			commentDialogList.add(
-//					new CommentDialogBox(
-//							kickCont, 
-//							itemKey,
-//							currentMasterUserKey, 
-//							image, 
-//							currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
-//					);
-//			showComments();
-//			return;
-//		}
-//		if (commentDialogList.size() == 0) {
-//			Image image = new Image();
-//			image.setUrl(Resources.INSTANCE.s1().getURL());
-//			
-//			commentDialogList.add(
-//					new CommentDialogBox(
-//							kickCont, 
-//							itemKey,
-//							currentMasterUserKey, 
-//							image, 
-//							currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
-//					);
-//			showComments();
-//		}//無いから作る、のではなく、零件でかつ、そのユーザーのものがないので出す。かつ、自分の奴を消す
-		
-//		for (Iterator<CommentDialogBox> commentDialogItel = commentDialogList.iterator(); commentDialogItel.hasNext();) {
-//			CommentDialogBox currentCommentDialogBox = commentDialogItel.next();
-//			debug.trace("currentCommentDialogBox_"+currentCommentDialogBox.getM_userKey());
-//			debug.trace("currentMasterUserKey_"+currentMasterUserKey);
-//			
-//			if (currentCommentDialogBox.getM_userKey().toString().equals(currentMasterUserKey.toString())) {
-//				debug.trace("currentUserKeyが一致するダイアログがすでにある_"+currentMasterUserKey);
-//				//それが自分のidで、かつ新規モードのものだったら、作り直しを行う。
-//				if (currentMasterUserKey.get("name").toString().equals(myName) && currentCommentDialogBox.isFirstMode()) {
-//					debug.trace("自分の新規のやつでした");
-//					currentCommentDialogBox.hide();//ここが効いてて、でも、、ってことは、なにか混乱が
-//					commentDialogList.remove(currentCommentDialogBox);
-//					
-//					
-//					Image image = new Image();
-//					image.setUrl(Resources.INSTANCE.s1().getURL());
-//					
-//					commentDialogList.add(
-//							new CommentDialogBox(
-//									kickCont, 
-//									itemKey,
-//									currentMasterUserKey, 
-//									image, 
-//									currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
-//							);
-//					return;
-//				}
-//				
-//				currentCommentDialogBox.updateComment(currentCommentBody, currentCommentDate, currentCommentedByString);
-//				return;
-//			}
-			
-//			if (!commentDialogItel.hasNext()) {
-//				debug.trace("このユーザーのコメントはまだ無いので、作る");
-//				//ゆっくりしていってね！
-//				Image image = new Image();
-//				image.setUrl(Resources.INSTANCE.s1().getURL());
-//				
-//				commentDialogList.add(
-//						new CommentDialogBox(
-//								kickCont, 
-//								itemKey,
-//								currentMasterUserKey, 
-//								image, 
-//								currentCommentBody+"@"+currentCommentedBy)//+":"+currentCommentDate
-//						);
-//				showComments();
-//			}
-	
 	}
 	
 	/**
@@ -167,8 +80,8 @@ public class ItemCommentController {
 			String currentCommentBody, String currentCommentDate,
 			String currentCommentedByString) {
 		
-		String currentMyName = kickCont.getUStCont().getUserName();
-		
+		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
+		debug.trace("currentMyName_"+currentMyName+"/commentMasterUserName_"+commentMasterUserName);
 		//自分だったら
 		if (currentMyName.equals(commentMasterUserName)) {//自分で自分のところに書き込んだ
 			//自分から自分のボードに書き込んだ。yetが有れば、処理する。
@@ -201,6 +114,7 @@ public class ItemCommentController {
 		//0ではないので、探索して有るかどうかチェック、無ければ追加する
 		for (Iterator<CommentDialogBox> commentDialogItel = commentDialogList.iterator(); commentDialogItel.hasNext();) {
 			CommentDialogBox currentDialogBox = commentDialogItel.next();
+			debug.trace("currentDialogBox.getMasterUserNameWithPass()_"+currentDialogBox.getMasterUserNameWithPass()+"/boardMasterName_"+boardMasterName);
 			if (currentDialogBox.getMasterUserNameWithPass().equals(boardMasterName)) {//すでにあるので、作成の必要が無い
 				return;
 			}
@@ -266,8 +180,6 @@ public class ItemCommentController {
 	private void addCommentToMyBoard(String currentMyName,
 			String currentCommentBody, String currentCommentDate,
 			String currentCommentedByString) {
-		
-		debug.assertTrue(kickCont.getUStCont().getUserName().equals(currentMyName), "ユーザーが切り替わった");
 		
 		for (Iterator<CommentDialogBox> commentDialogItel = commentDialogList.iterator(); commentDialogItel.hasNext();) {
 			//リスト中で、マスターの名称が一致するものを探す

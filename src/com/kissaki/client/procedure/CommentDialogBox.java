@@ -3,6 +3,7 @@ package com.kissaki.client.procedure;
 
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.ui.Image;
@@ -54,8 +55,7 @@ public class CommentDialogBox extends PopupPanel {
 		
 		
 		commentSpace = new TextArea();//イベントシンクしないと怖い。足せないかな？ そうでもないか。
-		commentSpace.setWidth("800");
-		
+		commentSpace.setPixelSize(250, 100);
 		VerticalPanel panel = new VerticalPanel();
 		panel.add(userImage);
 		
@@ -73,7 +73,7 @@ public class CommentDialogBox extends PopupPanel {
 					commentWindow.setFocus(false);
 					
 					JSONObject commentWithUserKey = new JSONObject();
-					commentWithUserKey.put("comment", new JSONString(commentWindow.getText()));
+					commentWithUserKey.put("comment", new JSONString(URL.encode(commentWindow.getText())));
 					commentWithUserKey.put("userKey", kCont.getUStCont().getUserKey());//このウインドウに書き込んだ人
 					commentWithUserKey.put("masterUserKey", m_masterUserKey);//このウインドウの主(Got from comment)
 					commentWithUserKey.put("itemKey", m_itemKey);
@@ -122,8 +122,13 @@ public class CommentDialogBox extends PopupPanel {
 	public void updateComment(String currentCommentBody,
 			String currentCommentDate, String currentCommentedBy) {
 		debug.trace("currentCommentBody_"+currentCommentBody+"_currentCommentDate_"+currentCommentDate+"/currentCommentedBy_"+currentCommentedBy);
-		commentSpace.setText(commentSpace.getText()+"\n"
-				+ currentCommentBody+"@"+currentCommentedBy);//改行が効くといいな。
+		int before = URL.decode(commentSpace.getText()).length();
+		int length = URL.decode(currentCommentBody+"@"+currentCommentedBy).length();
+		commentSpace.setText(URL.decode(commentSpace.getText()
+				+ currentCommentBody+"@"+currentCommentedBy) +"\n");//改行が効くといいな。
+//		commentSpace.setCursorPos(100);//意図と違う
+		commentSpace.setSelectionRange(before, length);//オートではスクロールしてくれませんね。
+		
 	}
 
 	/**

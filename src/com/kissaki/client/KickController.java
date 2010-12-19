@@ -326,7 +326,7 @@ public class KickController {
 				 * 
 				 */
 //				アイテムのキーを元に、コメント情報を取得する。この画面は常に一発で更新する。
-				uStCont.addRequestToRequestQueue(itemKey, ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+				uStCont.addRequestToRequestQueue(itemKey, ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
 				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
 				
 				
@@ -370,15 +370,23 @@ public class KickController {
 			}
 			
 			
-			if (exec.startsWith("CommentGet+")) {
-				String commentData = exec.substring("CommentGet+".length(), exec.length());
+			if (exec.startsWith("MyCommentGet+")) {//自分からのコメント
+				String commentData = exec.substring("MyCommentGet+".length(), exec.length());
 				
-				//とどくのは、コメントのデータのJSON。
-
 				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
 				debug.trace("commentBlock_"+commentBlock);
 				
 				itemCommentCont.addComment(commentBlock);
+			}
+			
+			if (exec.startsWith("SomeCommentGet+")) {//他人からのコメント
+				debug.trace("だれかからのコメントが来た");
+				String commentData = exec.substring("SomeCommentGet+".length(), exec.length());
+
+				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
+				debug.trace("commentBlock_"+commentBlock);
+				
+				//itemCommentCont.addComment(commentBlock);
 			}
 			
 			if (exec.startsWith("CommentSaved+")) {
@@ -390,7 +398,7 @@ public class KickController {
 				itemKey.put("itemKey", value);
 				itemKey.put("userKey", uStCont.getUserKey());
 				
-				uStCont.addRequestToRequestQueue(itemKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+				uStCont.addRequestToRequestQueue(itemKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT);
 				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
 			}
 			
@@ -458,7 +466,6 @@ public class KickController {
 				debug.trace("UserItemCurren_error_"+e);
 			}
 			
-			
 			procQueExecute(uStCont.getUserKey());
 //			List<ClientSideCurrentItemDataModel> originArray = uStCont.getCurrentItems();//ここで、差分だけ返すとか超かっけー
 //			
@@ -471,8 +478,6 @@ public class KickController {
 //			
 //			procedure("ItemUpdated+"+newArray.toString());
 		}
-
-		
 		
 		/*
 		 * サーバからのPush通信を受け取る部分
@@ -523,6 +528,9 @@ public class KickController {
 			if (isMyself(root, uStCont.getUserKey())) {
 				debug.trace("コメントデータが一件も無い_"+commandString);
 				debug.assertTrue(isMyself(root, uStCont.getUserKey()), "自分しかいないので自分宛");
+				
+				//一件も存在しないので、自分のpopを出す
+				procedure("NoComment+"+commandString);
 				return;
 			}
 		}
@@ -556,14 +564,20 @@ public class KickController {
 		
 		if (commandString.contains("COMMENT_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("from自分なので、自分が書き込んだ奴");
+				debug.trace(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+				debug.trace("from自分なので、自分がリクエストした奴");
 				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
 				
 				debug.trace("コメントデータをゲット_"+commandString);
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
-				procedure("CommentGet+"+gotCommentData);
+				procedure("MyCommentGet+"+gotCommentData);
 			} else {
-				debug.trace("他人からのコメントデータが届いた_"+getUserNameFromUserKey(root));
+				debug.trace("--------------------------------------------------------");
+				debug.trace("他人からのリクエストで、コメントデータが届いた_"+getUserNameFromUserKey(root));
+				
+				debug.trace("コメントデータをゲット_"+commandString);
+				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
+				procedure("SomeCommentGet+"+gotCommentData);
 			}
 			
 			
@@ -859,10 +873,27 @@ public class KickController {
 				}
 				);
 			}
-			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT) != null) {
-				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETCOMMENT);
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT) != null) {
+				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
 				//所持ユーザーと、そのコメントを取得、更新があったら(=この返答があったら)逐一塗り替える。
-				greetingService.greetServer("getCommentData+"+itemKeyForGetComment,
+				greetingService.greetServer("getAllCommentData+"+itemKeyForGetComment,
+						new AsyncCallback<String>() {
+					public void onFailure(Throwable caught) {
+						debug.trace("failure");
+					}
+					
+					public void onSuccess(String result) {
+						debug.trace("success!_"+result);
+						procedure("アイテム取得開始");
+					}
+				}
+				);
+			}
+			
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT) != null) {
+				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT);
+				//所持ユーザーと、そのコメントを取得、更新があったら(=この返答があったら)逐一塗り替える。
+				greetingService.greetServer("getSingleCommentData+"+itemKeyForGetComment,
 						new AsyncCallback<String>() {
 					public void onFailure(Throwable caught) {
 						debug.trace("failure");

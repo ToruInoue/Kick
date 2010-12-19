@@ -10,6 +10,8 @@ import com.kissaki.client.subFrame.debug.Debug;
  * このクライアントで、現在ユーザーが持っている通信を保持するキュー
  * URLを直接キーとして使用する。
  * 
+ * TODO ID管理が必要
+ * 
  * @author ToruInoue
  *
  */
@@ -25,7 +27,8 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_GET_ITEM = "GET_ITEM";
 	public final static String REQUEST_TYPE_UPDATE_MYDATA = "MY_CURRENT";
 	
-	public final static String REQUEST_TYPE_GETCOMMENT = "GET_COMMENT";
+	public final static String REQUEST_TYPE_GETALLCOMMENT = "GET_ALLCOMMENT";
+	public final static String REQUEST_TYPE_GET_LATESTCOMMENT = "GET_LATESTCOMMENT";
 	public final static String REQUEST_TYPE_ADDCOMMENT = "ADD_COMMENT";  
 	
 
