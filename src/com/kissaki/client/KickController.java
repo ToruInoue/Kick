@@ -433,17 +433,17 @@ public class KickController {
 		 * ユーザーのデータの更新を受け付ける
 		 * いつでも、、、、
 		 * 最大深度のすげ替え
+		 * 
+		 * ユーザーが持っているアイテムのキーで、更新が必要なものが飛んでくる。
+		 * 受け取ったら、過去のリクエストと比較してがんばる。
 		 */
 		if (exec.startsWith("UserItemCurrent+")) {
+			
 			String newArrivalItemData = exec.substring("UserItemCurrent+".length(), exec.length());
+			
 			JSONArray owningItemKeyArray = JSONParser.parseStrict(newArrivalItemData).isArray();
 			
-			//失敗、アイテムデータの群れが来たと勘違いしちゃった。
-			//uStCont.compareItemData(array);
-			
-			//もし差分があるようなら--このアイデアは無駄でした。取得してきていたのはユーザーが所持しているアイテムの最新のキー集であり、
-			//リクエストする元にこそなれ、現在持っているアイテムのデータと比較するものでは無かったのです。あはは。
-			//なので、比較するとしたら、現在持っている/まだもっていない/取得しようとしている、　などのリクエスト状況と照らし合わせ、
+			//比較するとしたら、現在持っている/まだもっていない/取得しようとしている、　などのリクエスト状況と照らし合わせ、
 			//既に持っていればタイムスタンプを送り込んで比較、
 			//今読み込み中であれば、返答が着たら比較するように仕向けるようセット、
 			//まだ持っていなければ取得用リクエストを書く、といった所でしょう。
@@ -453,9 +453,9 @@ public class KickController {
 			 * リクエストと比較して、合致するものが無ければ追加する
 			 */
 			try {
-				uStCont.compareToCurrentRequest(owningItemKeyArray);
+				uStCont.compareToCurrentRequest(uStCont.getUserKey(), owningItemKeyArray);
 			} catch (Exception e) {
-				debug.trace("error_"+e);
+				debug.trace("UserItemCurren_error_"+e);
 			}
 			
 			
@@ -520,56 +520,81 @@ public class KickController {
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
 		if (commandString.contains("NO_COMMENT")) {
-//			debug.trace("コメントデータが一件も無い_"+commandString);
+			debug.trace("コメントデータが一件も無い_"+commandString);
+			debug.assertTrue(isMyself(root, uStCont.getUserKey()), "自分しかいないので自分宛");
+			
+			if (isMyself(root, uStCont.getUserKey())) {
+				return;
+			}
 		}
 		
 		if (commandString.contains("THERE_IS_MY_COMMENT")) {
-			debug.trace("自分のコメント、あります。");
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("自分のコメント、あります。");
+			}
+			
 //			procedure("ThereIsMyComment+"+commandString);
 		}
 		
 		if (commandString.contains("NO_MY_DATA")) {
-			debug.trace("このアイテムに関しての自分のコメントデータが無い_"+commandString);
-			procedure("NoComment+"+commandString);
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("このアイテムに関しての自分のコメントデータが無い_"+commandString);
+				procedure("NoComment+"+commandString);
+			}
 		}
 		
 		if (commandString.contains("COMMENT_SAVED")) {
-			debug.trace("コメントデータが保存出来た_"+commandString);
-			JSONObject itemKey = root.get("requested").isObject();
-			procedure("CommentSaved+"+itemKey);
-			
-			
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("コメントデータが保存出来た_"+commandString);
+				JSONObject itemKey = root.get("requested").isObject();
+				procedure("CommentSaved+"+itemKey);
+			}
 		}
+		
 		if (commandString.contains("COMMENT_DATA")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("自分が書き込んだ奴");
+			}
+			
 			debug.trace("コメントデータをゲット_"+commandString);
 			JSONObject gotCommentData = root.get("wholeCommentData").isObject();
 			procedure("CommentGet+"+gotCommentData);
 		}
 		
 		if (commandString.contains("TAG_CREATED")) {
-			debug.trace("TAG_CREATEDが発生_"+commandString);
-			//自分の持ってるアイテムのどれかにタグが足された筈ですが、pushで帰ってきます。口を開けて待ってなさい。
-
-			//TODO タグリクエストの完了
-			//uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
-			
-			procedure("tagUpdated+"+commandString);//TODO このタグが更新されたので、要素を更新する、、、、のだが、まあ、ボタンなので、内容更新がめんどい。
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("TAG_CREATEDが発生_"+commandString);
+				//自分の持ってるアイテムのどれかにタグが足された筈ですが、pushで帰ってきます。口を開けて待ってなさい。
+				
+				//TODO タグリクエストの完了
+				
+				//uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
+				procedure("tagUpdated+"+commandString);//TODO このタグが更新されたので、要素を更新する、、、、のだが、まあ、ボタンなので、内容更新がめんどい。
+			}
 		}
 		
 		if (commandString.contains("ITEM_ADDED_TO_USER")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("このユーザーのアイテムがこのユーザーに加算された_"+root);
+			} else {
+				debug.trace("別のユーザーのアイテムが加算された");
+			}
 			
 			value = root.get("currentItemkey").isString();
-			//このリクエストが叶い、保存された、、はず。
-			
-			debug.trace("ITEM_ADDED_TO_USERに到達_"+value.toString());
-			
+		
 			//今度は取得のリクエストをするのだ、か、ログイン処理をするか。
 			
 			uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
-			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ、、、うごくのかなーーーこれ、、、 最新を追い続ける仕様
+			procQueExecute(uStCont.getUserKey());
 		}
 		
 		if (commandString.contains("ITEM_CREATED")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("このユーザーによって、このユーザーのアイテムがつくられたようです");
+			} else {
+				debug.trace("だれかによって、このユーザーのアイテムがつくられたようです");
+			}
+			
 			debug.trace("ITEM_CREATED_このアイテムが設定されました_"+value);
 			//アイテムのリクエストが終了したので、ステータスを変える
 		}
@@ -578,6 +603,11 @@ public class KickController {
 		 * アイテムの受け取りが発生
 		 */
 		if (commandString.contains("PUSH_ITEM")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("For myself From myself");
+			} else {
+				debug.trace("For myself from someone");
+			}
 			try {
 				JSONObject item = root.get("item").isObject();
 
@@ -614,27 +644,71 @@ public class KickController {
 			}
 		}
 		
+		if (commandString.contains("TAG_ALREADY_OWN")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("TAG_ALREADY_OWN_ココに来てる");
+			}
+		}
+		
+		if (commandString.contains("TAG_TO_ITEM_OWNER_ADDED")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("TAG_TO_ITEM_OWNER_ADDED_ココに来てる");
+			}
+		}
+		
 		
 		if (commandString.contains("ITEM_ALREADY_OWN")) {
-			value = root.get("value").isString();
-			debug.trace("ITEM_ALREADY_OWN_このアイテムはすでにあなたによって所持されています_"+value);
+			if (isMyself(root, uStCont.getUserKey())) {
+				value = root.get("itemAddressKey").isString();
+				debug.trace("ITEM_ALREADY_OWN_このアイテムはすでにあなたによって所持されています_"+value);
+			} else {
+				//誰かから、このアイテムを持っています、という通信が来た
+			}
 		}
 		
 		if (commandString.contains("ALREADY_ADDED_TO_USER")) {
-			value = root.get("value").isString();
-			debug.trace("ALREADY_ADDED_TO_USER_あなたのアイテムリストにアイテムが既に入っています_"+value);
+			if (isMyself(root, uStCont.getUserKey())) {
+				value = root.get("itemAddress").isString();
+				debug.trace("ALREADY_ADDED_TO_USER_あなたのアイテムリストにアイテムが既に入っています_"+value);
+			}
 		}
 		
 		
-		if (commandString.contains("CURRENT_ITEM_DATA")) {//即時更新は封印、
-			debug.trace("CURRENT_ITEM_DATA_root_"+root);
-			JSONArray array = root.get("userOwnItems").isArray();
-			procedure("UserItemCurrent+"+array.toString());
+		if (commandString.contains("CURRENT_ITEM_DATA")) {
+			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("CURRENT_ITEM_DATA_root_"+root);
+				
+				JSONArray array = root.get("userOwnItems").isArray();
+				
+				procedure("UserItemCurrent+"+array.toString());
+			}	
 		}
 		
 	}
 
 	
+	/**
+	 * 自分が送ったメッセージであればtrue, それ以外はfalseを返す
+	 * @param commandString
+	 * @param userKey
+	 * @return
+	 */
+	private boolean isMyself(JSONObject root, JSONObject myUserKey) {
+		String myNameString = myUserKey.get("name").isString().toString();
+		
+		try {
+			JSONObject userKey = root.get("userInfo").isObject();
+			String userName = userKey.get("name").isString().toString();
+			if (userName.equals(myNameString)) {
+				return true;
+			}
+		} catch (Exception e) {
+			debug.trace("isMyself_error_"+e);
+		}
+		
+		
+		return false;
+	}
 
 	/**
 	 * キューの通信を実行する。
@@ -689,6 +763,7 @@ public class KickController {
 			
 			/*
 			 * アイテムを加算する
+			 * アドレスのみで与えている。
 			 */
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD) != null) {
 				String itemAddressKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
@@ -715,9 +790,9 @@ public class KickController {
 			}
 			
 			//アイテムを取得する
-			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET) != null) {
-				String itemKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET);
-				
+			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM) != null) {
+				String itemKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM);
+				debug.trace("itemKey_"+itemKey);
 				greetingService.greetServer("getItemData+"+itemKey,
 						new AsyncCallback<String>() {
 					public void onFailure(Throwable caught) {
@@ -858,7 +933,7 @@ public class KickController {
 			 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
 			 */
 			if (userItemArray != null) {
-				setUpUserItemRequest(userItemArray);
+				setUpUserItemRequest(uStCont.getUserKey(), userItemArray);
 			}
 		} catch (Exception e) {
 			debug.trace("エラー隠蔽の可能性がある_"+e);
@@ -867,15 +942,19 @@ public class KickController {
 
 	/**
 	 * アイテムリクエストをJsonStringから読み出し行う。
+	 * @param userKey 
 	 * @param jsonString
 	 */
-	private void setUpUserItemRequest(JSONArray userItemArray) {
-		
+	private void setUpUserItemRequest(JSONObject userKey, JSONArray userItemArray) {
+		debug.trace("setUpUserItemRequestに来てる");
 		int size = userItemArray.size();
 		for (int i = 0; i < size; i++) {
-			JSONObject key = userItemArray.get(i).isObject();//ユーザーの所持している情報からキーを復号している、これは、ずれないでしょう。
-
-			uStCont.addRequestToRequestQueue(key.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET);
+			JSONObject key = new JSONObject();
+			
+			key.put("itemKey", userItemArray.get(i).isObject());
+			key.put("userKey", userKey);
+			
+			uStCont.addRequestToRequestQueue(key.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM);
 		}
 
 	}
@@ -978,7 +1057,7 @@ public class KickController {
 			}
 			
 			public void onMessage(String encodedData) {
-				debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);
+				//debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);
 				procedure("push+"+encodedData);
 			}
 		});

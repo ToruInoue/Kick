@@ -22,7 +22,7 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_GET_TAG_FROM_PERSON = "GET_TAG_BY_YOU";
 	public final static String REQUEST_TYPE_ADDNEWTAG = "ADD_TAG";
 	public final static String REQUEST_TYPE_ADD = "ADD_ITEM";
-	public final static String REQUEST_TYPE_GET = "GET_ITEM";
+	public final static String REQUEST_TYPE_GET_ITEM = "GET_ITEM";
 	public final static String REQUEST_TYPE_UPDATE_MYDATA = "MY_CURRENT";
 	
 	public final static String REQUEST_TYPE_GETCOMMENT = "GET_COMMENT";

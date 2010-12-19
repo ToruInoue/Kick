@@ -106,9 +106,16 @@ public class UserStatusController {
 	 * @param request
 	 */
 	public void addRequestToRequestQueue (String request, String requestTypeGet) {
-		debug.trace("request_"+request);
-		m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));
-		debug.trace("request_inserted_"+request);
+		try {
+			debug.trace("request_"+request);
+			m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));
+			debug.trace("request_inserted_"+request);
+		} catch (Exception e) {
+			debug.trace("addRequestToRequestQueue_error"+e);
+			while (true) {
+				if (false) break;
+			}
+		}
 	}
 	
 	/**
@@ -206,31 +213,56 @@ public class UserStatusController {
 	 * レイヤー状の処理が楽しい。
 	 * @param owningItemKeyArray
 	 */
-	public void compareToCurrentRequest(JSONArray owningItemKeyArray) {
+	public void compareToCurrentRequest(JSONObject userKey, JSONArray owningItemKeyArray) {
 		//名前と合致するか確認し、合致するものが無ければ新規取得が必要なものとしてセットする。
 		//{"kind":"item", "id":0, "name":"http://a"}
 		for (int i = 0; i < owningItemKeyArray.size(); i++) {
-			JSONObject currentObject = owningItemKeyArray.get(i).isObject();
 			
-			String currentAddress_ = currentObject.toString();
-			debug.trace("currentAddress_"+currentAddress_);
-			for (Iterator<ClientSideRequestQueueModel> requestModelItel = m_rQueueModelMap.iterator(); requestModelItel.hasNext();) {
+			JSONObject currentObject = owningItemKeyArray.get(i).isObject();
+			//アイテムキーと、自分のキーのペアを送る。
+			
+			JSONObject userKeyWithItemKey = new JSONObject();
+			
+			debug.trace("currentAddress_"+currentObject.toString());
+			
+			userKeyWithItemKey.put("itemKey", currentObject);
+			userKeyWithItemKey.put("userKey", userKey);
+			checkContainsDataURL(userKeyWithItemKey.toString());//比較して存在しなければ、追加する
+		}
+	}
+	
+	/**
+	 * アイテムの内部を探索、一致したら戻る
+	 * @param currentAddress
+	 */
+	private void checkContainsDataURL (String currentAddress) {
+		for (Iterator<ClientSideRequestQueueModel> requestModelItel = m_rQueueModelMap.iterator(); requestModelItel.hasNext();) {	
+			try {
+				
 				ClientSideRequestQueueModel currentModel = requestModelItel.next();
-				if (currentModel.getM_dataURL().equals(currentAddress_)) {//アドレス一致するものがある
+				debug.trace("currentModel_"+currentModel.getM_dataURL());
+				if (currentModel.getM_dataURL().equals(currentAddress)) {//アドレス一致するものがある
 					//アドレス一致する = 含まれている
-					debug.trace("アドレスがすでにQueueに含まれている_"+currentAddress_);
-					return;
+					debug.trace("アドレスがすでにQueueに含まれている_"+currentAddress);
+					return;//第2層なので、これ以上探す必要が無い
 				}
 				
 				if (!requestModelItel.hasNext()) {
 					//address = address.substring(1,currentAddress_.length()-1);
-					debug.trace("含まれていないので追加する_アドレスしか追加していないので、注意。"+currentAddress_);
-					addRequestToRequestQueue(currentAddress_, ClientSideRequestQueueModel.REQUEST_TYPE_GET);
+					debug.trace("含まれていないので追加する_アドレスしか追加していないので、注意。"+currentAddress);
+					
+					addRequestToRequestQueue(currentAddress, ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM);
+					return;
 				}
-			}	
-		}
+			} catch (Exception e) {
+				debug.trace("ConcurrentModifi_error_"+e);
+				e.printStackTrace();
+				while (true) {
+					if (false) break;
+				}
+			}
+		}	
 	}
-
 
 
 
