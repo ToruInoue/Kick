@@ -24,33 +24,36 @@ public class CommentDialogBox extends PopupPanel {
 	
 	private KickController kCont;
 	
-	final JSONObject m_userKey;
+	final JSONObject m_masterUserKey;
 	final Image m_userImage;
 	final String m_comment;
 	final JSONObject m_itemKey;
 	int m_mode = -1;
-	static final int MODE_NEWCOMMENT = 0;
+	static final int MODE_YET_COMMENT = 0;
 	static final int MODE_COMMENT = 1;
+	
+	TextArea commentSpace;
 	
 	/**
 	 * コンストラクタ
 	 * @param kickCont
 	 * @param currentUserKey 
 	 * @param userImage
+	 * @param mode 
 	 * @param commentSpace
 	 */
-	public CommentDialogBox (final KickController kickCont, JSONObject itemKey, JSONObject currentUserKey, Image userImage, String comment) {
+	public CommentDialogBox (final KickController kickCont, JSONObject itemKey, JSONObject masterUserKey, Image userImage, int mode, String comment) {
 		debug = new Debug(this);
 		
 		this.kCont = kickCont;
 		this.m_itemKey = itemKey;
-		this.m_userKey = currentUserKey;
+		this.m_masterUserKey = masterUserKey;
 		this.m_userImage = userImage;
 		this.m_comment = comment;
 		
 		
 		
-		TextArea commentSpace = new TextArea();//イベントシンクしないと怖い。足せないかな？ そうでもないか。
+		commentSpace = new TextArea();//イベントシンクしないと怖い。足せないかな？ そうでもないか。
 		commentSpace.setWidth("800");
 		
 		VerticalPanel panel = new VerticalPanel();
@@ -72,7 +75,7 @@ public class CommentDialogBox extends PopupPanel {
 					JSONObject commentWithUserKey = new JSONObject();
 					commentWithUserKey.put("comment", new JSONString(commentWindow.getText()));
 					commentWithUserKey.put("userKey", kCont.getUStCont().getUserKey());//このウインドウに書き込んだ人
-					commentWithUserKey.put("masterUserKey", m_userKey);//このウインドウの主
+					commentWithUserKey.put("masterUserKey", m_masterUserKey);//このウインドウの主(Got from comment)
 					commentWithUserKey.put("itemKey", m_itemKey);
 					
 					debug.trace("commentWithUserKey_"+commentWithUserKey);
@@ -81,19 +84,15 @@ public class CommentDialogBox extends PopupPanel {
 			}
 		});
 		
-		if (comment != null) {
-			this.m_mode = MODE_COMMENT;
-		} else {
-			this.m_mode = MODE_NEWCOMMENT;
-			
-		}
+		this.m_mode = mode;
+		
 		switch (getM_mode()) {
-			case MODE_NEWCOMMENT:
-				commentWindow.setText("Kick here!");
+			case MODE_YET_COMMENT://過去のコメントいちらんが存在しないので、出さない。
+				commentWindow.setText(comment);
 				panel.add(commentWindow);
 				break;
 		
-			case MODE_COMMENT:
+			case MODE_COMMENT://過去のコメント一覧を表示する。
 				panel.add(commentSpace);
 				panel.add(commentWindow);
 				break;
@@ -108,9 +107,6 @@ public class CommentDialogBox extends PopupPanel {
 		return m_mode;
 	}
 
-	public Object getM_userKey() {
-		return this.m_userKey;
-	}
 
 
 	/**
@@ -119,8 +115,6 @@ public class CommentDialogBox extends PopupPanel {
 	 * コメントが書いてあるマスターのIDをもとに、コメントボードの内容を取得する。
 	 * アイテムとして更新が罹るが、コメント領域をアクティブに更新する。
 	 * コメント領域は、DBを持たないという構造になる。
-	 * 
-	 * 
 	 * @param currentCommentBody
 	 * @param currentCommentDate
 	 * @param currentCommentedBy
@@ -128,6 +122,8 @@ public class CommentDialogBox extends PopupPanel {
 	public void updateComment(String currentCommentBody,
 			String currentCommentDate, String currentCommentedBy) {
 		debug.trace("currentCommentBody_"+currentCommentBody+"_currentCommentDate_"+currentCommentDate+"/currentCommentedBy_"+currentCommentedBy);
+		commentSpace.setText(commentSpace.getText()+"\n"
+				+ currentCommentBody+"@"+currentCommentedBy);//改行が効くといいな。
 	}
 
 	/**
@@ -138,10 +134,22 @@ public class CommentDialogBox extends PopupPanel {
 		switch (getM_mode()) {
 			case MODE_COMMENT:
 				return false;
-			case MODE_NEWCOMMENT:
+			case MODE_YET_COMMENT:
 				return true;
 		}
 		return false;
 	}
+
+	
+	/**
+	 * このボードのマスターの名称を取得する
+	 *  
+	 * @return
+	 */
+	public String getMasterUserNameWithPass () {
+		String masterUserName = m_masterUserKey.get("name").isString().toString();
+		return masterUserName;
+	}
+	
 
 }

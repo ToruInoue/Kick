@@ -80,10 +80,6 @@ GreetingService {
 
 
 
-
-
-
-		//ログイン
 		if (input.startsWith("userLogin+")) {
 			return loginQualification(input);
 		}
@@ -95,11 +91,11 @@ GreetingService {
 		if (input.startsWith("getItemData+")) {
 			return getItemQualification(input);
 		}
-
+		
 		if (input.startsWith("setItemData+")) {
 			return setItemQualification(input);
 		}
-
+		
 		if (input.startsWith("addTagToItemData+")) {
 			return addTagToItemQualification(input);
 		}
@@ -140,7 +136,7 @@ GreetingService {
 		JSONObject userKeyObject = null;
 		String userKeyString = null;
 		
-		JSONObject masterUserKeyObject = null;
+		JSONObject masterUserkeyObject = null;//Find masteruser from name.
 		String masterUserKeyString = null;
 		
 		try {
@@ -153,40 +149,19 @@ GreetingService {
 			userKeyObject = rootObject.getJSONObject("userKey");
 			userKeyString = userKeyObject.getString("name").toString();
 			
-			masterUserKeyObject = rootObject.getJSONObject("masterUserKey");
-			masterUserKeyString = masterUserKeyObject.getString("name").toString();
+			masterUserkeyObject = rootObject.getJSONObject("masterUserKey");
+			masterUserKeyString = masterUserkeyObject.getString("name").toString();
 			
 			debug.trace("userKeyString_"+userKeyString);
 		} catch (Exception e) {
 			debug.trace("addCommentQualification_error_"+e);
 		}
 		
-		Key masterUserKey = Datastore.createKey(UserDataModel.class, masterUserKeyString);
-		UserDataModelMeta masterUserMeta = UserDataModelMeta.get();
-		List<UserDataModel> masterUsers = Datastore.query(masterUserMeta)
-		.filter(masterUserMeta.key.equal(masterUserKey))
-		.asList();
-		UserDataModel currentMasterUserDataModel = null;
-		if (0 < masterUsers.size()) {//さすがに存在している筈だが、存在していないケースが考えられそう。
-			debug.assertTrue(masterUsers.size() == 1, "マスターに該当するのが一件以上ある");
-			currentMasterUserDataModel = Datastore.get(UserDataModel.class, masterUsers.get(0).getKey());
-		}
+		UserDataModel currentMasterUserDataModel = getUserModelFromKeyName(masterUserKeyString);
+		debug.assertTrue(currentMasterUserDataModel != null, "currentMasterUserDataModelがnull");
 		
-		
-		Key userKey = Datastore.createKey(UserDataModel.class, userKeyString);
-		UserDataModelMeta userMeta = UserDataModelMeta.get();
-		List<UserDataModel> users = Datastore.query(userMeta)
-		.filter(userMeta.key.equal(userKey))
-		.asList();
-		
-		UserDataModel currentUserDataModel = null;
-		if (0 < users.size()) {//さすがに存在している筈だが、存在していないケースが考えられそう。
-			debug.assertTrue(users.size() == 1, "一件以上ある");
-			currentUserDataModel = Datastore.get(UserDataModel.class, users.get(0).getKey());
-		}
-		if (currentUserDataModel == null) {
-			debug.assertTrue(false, "該当するユーザーが居ない");
-		}
+		UserDataModel currentUserDataModel = getUserModelFromKeyName(userKeyString);
+		debug.assertTrue(currentUserDataModel != null, "currentUserDataModelがnull");
 		
 		
 		Key itemKey = Datastore.createKey(ItemDataModel.class, itemKeyString);
@@ -200,6 +175,7 @@ GreetingService {
 			//コメントアレイをゲットしたら、そこにコメントを追加するのだが、idはコメントの件数によってつけるようにする。
 			currentItem = Datastore.get(ItemDataModel.class, items.get(0).getKey());
 		}
+		
 		List<Key> commentKeyList = null;
 		Key commentKey = null;
 		if (currentItem != null) {
@@ -217,15 +193,20 @@ GreetingService {
 		
 		CommentDataModel currentCommentDataModel = null;
 		if (commentKey != null) {
+			debug.trace("コメントキーが存在している");
 			//存在するコメントについて、調べる？　いいや、調べない。
 			
 			currentCommentDataModel = new CommentDataModel();
+			
 			currentCommentDataModel.setKey(commentKey);
 			currentCommentDataModel.setM_commentBody(commentString);
 			currentCommentDataModel.setM_commentedBy(currentUserDataModel.getKey());
-			currentCommentDataModel.setM_commentMasterID(currentMasterUserDataModel.getKey());
+			debug.trace("保存直前-1");
+			currentCommentDataModel.setM_commentMasterID(currentMasterUserDataModel.getKey());//ここでカットぶ
 			
+			debug.trace("保存直前");
 			Datastore.put(currentCommentDataModel);
+			debug.trace("保存直後");
 			
 			currentItem.getM_commentList().add(currentCommentDataModel.getKey());
 			Datastore.put(currentItem);
@@ -331,8 +312,6 @@ GreetingService {
 				//ゲットし終わったら、コメントを取得
 				for (Iterator<CommentDataModel> commentItel = comments.iterator(); commentItel.hasNext();) {
 					CommentDataModel currentComment = commentItel.next();
-	//				private String m_commentBody;
-	//				private Date m_commentDate;
 					
 					Map<String, Object> map = new HashMap<String, Object>();
 	
@@ -342,22 +321,20 @@ GreetingService {
 					map.put("userInfo", myself.getKey());
 					
 					String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
-					debug.trace("userKeyName_"+userKeyName);
-					debug.trace("s_"+s);
+					
 					String currentCommentData = gson.toJson(map);
-					debug.trace("コメントをユーザーに送信する");
 					channel.sendMessage(channelId, currentCommentData);
 					
 					
 					if (userKeyName.equals(s)) {//ユーザー名で判断する
 						debug.trace("コメント書きの中に、自分が居た");
 						thereIsMyself = true;
-						
-						Map<String, Object> innerMap = new HashMap<String, Object>();
-						innerMap.put("command", "THERE_IS_MY_COMMENT");//自分の新規ウインドウがあったら、それを消す
-						innerMap.put("userInfo", myself.getKey());
-						String currentMyselfData = gson.toJson(innerMap);
-						channel.sendMessage(channelId, currentMyselfData);
+//						
+//						Map<String, Object> innerMap = new HashMap<String, Object>();
+//						innerMap.put("command", "THERE_IS_MY_COMMENT");
+//						innerMap.put("userInfo", myself.getKey());
+//						String currentMyselfData = gson.toJson(innerMap);
+//						channel.sendMessage(channelId, currentMyselfData);
 					}
 				}
 			}

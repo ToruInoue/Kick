@@ -349,8 +349,12 @@ public class KickController {
 			
 			if (exec.startsWith("InputYourText+")) {
 				String textInput = exec.substring("InputYourText+".length(), exec.length());
+				
 				debug.trace("コメント入力が有りました_"+textInput);
 				JSONObject commentWithItemKeyWithUserKey = JSONParser.parseLenient(textInput).isObject();
+				debug.trace("commentWithItemKeyWithUserKey_"+commentWithItemKeyWithUserKey);
+				
+				commentWithItemKeyWithUserKey.put("userKey", uStCont.getUserKey());
 				
 				uStCont.addRequestToRequestQueue(commentWithItemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
 				
@@ -365,10 +369,6 @@ public class KickController {
 				itemCommentCont.addMyCommentPopup();//自分の情報、特に変わったポップを出す このアイテムの自分のもの、なので、コントローラーが持っている情報を使用する。
 			}
 			
-			if (exec.startsWith("ThereIsMyComment+")) {
-				debug.trace("自分のコメントがあったので、もしMyCommentDialogがあれば、引っ込めます。");
-				itemCommentCont.removeMyNewPop();
-			}
 			
 			if (exec.startsWith("CommentGet+")) {
 				String commentData = exec.substring("CommentGet+".length(), exec.length());
@@ -520,10 +520,9 @@ public class KickController {
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
 		if (commandString.contains("NO_COMMENT")) {
-			debug.trace("コメントデータが一件も無い_"+commandString);
-			debug.assertTrue(isMyself(root, uStCont.getUserKey()), "自分しかいないので自分宛");
-			
 			if (isMyself(root, uStCont.getUserKey())) {
+				debug.trace("コメントデータが一件も無い_"+commandString);
+				debug.assertTrue(isMyself(root, uStCont.getUserKey()), "自分しかいないので自分宛");
 				return;
 			}
 		}
@@ -531,34 +530,43 @@ public class KickController {
 		if (commandString.contains("THERE_IS_MY_COMMENT")) {
 			if (isMyself(root, uStCont.getUserKey())) {
 				debug.trace("自分のコメント、あります。");
+			} else {
+				debug.trace("他人のコメント、あります。_"+getUserNameFromUserKey(root));
 			}
-			
-//			procedure("ThereIsMyComment+"+commandString);
 		}
 		
 		if (commandString.contains("NO_MY_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("このアイテムに関しての自分のコメントデータが無い_"+commandString);
+				debug.trace("NO_MY_DATA_このアイテムに関しての自分のコメントデータが無い_"+commandString);
 				procedure("NoComment+"+commandString);
+			} else {
+				debug.trace("NO_MY_DATA_このアイテムに関してのとある人自身のコメントデータが無い_"+commandString);
 			}
 		}
 		
 		if (commandString.contains("COMMENT_SAVED")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("コメントデータが保存出来た_"+commandString);
+				debug.trace("自分のコメントデータが保存出来た_"+commandString);
 				JSONObject itemKey = root.get("requested").isObject();
 				procedure("CommentSaved+"+itemKey);
+			} else {
+				debug.trace("他人のコメントデータが保存出来た");
 			}
 		}
 		
 		if (commandString.contains("COMMENT_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("自分が書き込んだ奴");
+				debug.trace("from自分なので、自分が書き込んだ奴");
+				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
+				
+				debug.trace("コメントデータをゲット_"+commandString);
+				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
+				procedure("CommentGet+"+gotCommentData);
+			} else {
+				debug.trace("他人からのコメントデータが届いた_"+getUserNameFromUserKey(root));
 			}
 			
-			debug.trace("コメントデータをゲット_"+commandString);
-			JSONObject gotCommentData = root.get("wholeCommentData").isObject();
-			procedure("CommentGet+"+gotCommentData);
+			
 		}
 		
 		if (commandString.contains("TAG_CREATED")) {
@@ -570,29 +578,30 @@ public class KickController {
 				
 				//uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
 				procedure("tagUpdated+"+commandString);//TODO このタグが更新されたので、要素を更新する、、、、のだが、まあ、ボタンなので、内容更新がめんどい。
+			} else {
+				debug.trace("他人のタグがアップデートされた_"+getUserNameFromUserKey(root));
 			}
 		}
 		
 		if (commandString.contains("ITEM_ADDED_TO_USER")) {
 			if (isMyself(root, uStCont.getUserKey())) {
 				debug.trace("このユーザーのアイテムがこのユーザーに加算された_"+root);
+				value = root.get("currentItemkey").isString();
+				
+				//今度は取得のリクエストをするのだ、か、ログイン処理をするか。
+				
+				uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+				procQueExecute(uStCont.getUserKey());
 			} else {
-				debug.trace("別のユーザーのアイテムが加算された");
-			}
-			
-			value = root.get("currentItemkey").isString();
-		
-			//今度は取得のリクエストをするのだ、か、ログイン処理をするか。
-			
-			uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
-			procQueExecute(uStCont.getUserKey());
+				debug.trace("別のユーザーのアイテムが別のユーザーに加算された_"+getUserNameFromUserKey(root));
+			}	
 		}
 		
 		if (commandString.contains("ITEM_CREATED")) {
 			if (isMyself(root, uStCont.getUserKey())) {
 				debug.trace("このユーザーによって、このユーザーのアイテムがつくられたようです");
 			} else {
-				debug.trace("だれかによって、このユーザーのアイテムがつくられたようです");
+				debug.trace("だれかによって、このユーザーのアイテムがつくられたようです_"+getUserNameFromUserKey(root));
 			}
 			
 			debug.trace("ITEM_CREATED_このアイテムが設定されました_"+value);
@@ -706,8 +715,18 @@ public class KickController {
 			debug.trace("isMyself_error_"+e);
 		}
 		
-		
 		return false;
+	}
+	
+	/**
+	 * userInfoが含まれているrootから、ユーザー名を返す
+	 * @param root
+	 * @return
+	 */
+	private String getUserNameFromUserKey (JSONObject root) {
+		JSONObject userKey = root.get("userInfo").isObject();
+		String userName = userKey.get("name").isString().toString();
+		return userName;
 	}
 
 	/**
