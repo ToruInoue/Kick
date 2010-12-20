@@ -7,7 +7,6 @@ import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Image;
@@ -114,15 +113,14 @@ public class ItemDialogBox extends DialogBox {
 						}
 						
 						kCont.procedure("TagUpload+"+itemKeyWithNewTag);
-//						newTagBox.removeFromParent();					
 					}
 				}
 			}
 		});
 		panel.add(newTagBox);
-		
 		setWidget(panel);
-		center();
+		setPopupPosition(300, 280);
+//		center();
 		show();
 		
 	}
@@ -137,7 +135,6 @@ public class ItemDialogBox extends DialogBox {
 	}
 	
 	public void selfKill() {
-		//newTagBox.re
 		hide();
 	}
 

@@ -26,6 +26,7 @@ public class UserStatusController {
 	String m_userName = "";
 	String m_userPass = "";
 	JSONObject m_userKey = null;
+	int m_imageNumber = -1;
 	
 	//リクエストキューモデルのリスト
 	ArrayList<ClientSideRequestQueueModel> m_rQueueModelMap;
@@ -112,9 +113,6 @@ public class UserStatusController {
 			debug.trace("request_inserted_"+request);
 		} catch (Exception e) {
 			debug.trace("addRequestToRequestQueue_error"+e);
-			while (true) {
-				if (false) break;
-			}
 		}
 	}
 	
@@ -257,9 +255,7 @@ public class UserStatusController {
 			} catch (Exception e) {
 				debug.trace("ConcurrentModifi_error_"+e);
 				e.printStackTrace();
-				while (true) {
-					if (false) break;
-				}
+				
 			}
 		}	
 	}
@@ -273,6 +269,18 @@ public class UserStatusController {
 	public String getUserNameWithPassAroundDoubleQuart() {
 		return "\""+getUserName()+"@"+getUserPass()+"\"";
 	}
+
+
+	public int getM_imageNumber() {
+		return m_imageNumber;
+	}
+
+
+	public void setM_imangeNumber(int m_imangeNumber) {
+		debug.trace("セットされてます_"+m_imangeNumber);
+		this.m_imageNumber = m_imangeNumber;
+	}
+
 
 
 

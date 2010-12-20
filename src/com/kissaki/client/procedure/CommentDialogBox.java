@@ -1,11 +1,14 @@
 package com.kissaki.client.procedure;
 
 
+import com.google.gwt.dom.client.Text;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.TextArea;
@@ -32,6 +35,7 @@ public class CommentDialogBox extends PopupPanel {
 	int m_mode = -1;
 	static final int MODE_YET_COMMENT = 0;
 	static final int MODE_COMMENT = 1;
+	final TextBox commentWindow;
 	
 	TextArea commentSpace;
 	
@@ -54,17 +58,27 @@ public class CommentDialogBox extends PopupPanel {
 		
 		
 		
-		commentSpace = new TextArea();//イベントシンクしないと怖い。足せないかな？ そうでもないか。
-		commentSpace.setPixelSize(250, 100);
+		commentSpace = new TextArea();
+		commentSpace.setPixelSize(180, 85);
 		VerticalPanel panel = new VerticalPanel();
-		panel.add(userImage);
+		panel.setBorderWidth(0);
+		//透明とかは、CSS使えば出来そうね。
+		HorizontalPanel hPanel = new HorizontalPanel();
+		String name = masterUserKey.get("name").isString().toString();
+		HTML t = new HTML(name);
 		
+		panel.add(hPanel);
+		hPanel.add(userImage);
+		hPanel.add(t);
 		
 		commentSpace.setText(comment);//この部分、改変出来るのかな。出来るな。
 		
 		
-		final TextBox commentWindow = new TextBox();
-		commentWindow.setWidth("600");
+		commentWindow = new TextBox();
+//		commentWindow.setWidth("600");
+//		commentWindow.setSize("180", "20");
+		commentWindow.setMaxLength(140);
+		commentWindow.setPixelSize(180, 25);
 		commentWindow.addKeyDownHandler(new KeyDownHandler() {
 			@Override
 			public void onKeyDown(KeyDownEvent event) {
@@ -126,8 +140,11 @@ public class CommentDialogBox extends PopupPanel {
 		int length = URL.decode(currentCommentBody+" by "+currentCommentedBy).length();
 		commentSpace.setText(URL.decode(commentSpace.getText()
 				+ currentCommentBody+" by "+currentCommentedBy) +"\n");//改行が効くといいな。
+		
+		commentWindow.setText("");
+		
 //		commentSpace.setCursorPos(100);//意図と違う
-		commentSpace.setSelectionRange(before, length);//オートではスクロールしてくれませんね。
+		//commentSpace.setSelectionRange(before, length);//オートではスクロールしてくれませんね。
 		
 	}
 

@@ -9,6 +9,8 @@ import java.util.Random;
 
 
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.UmbrellaException;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONArray;
@@ -121,7 +123,16 @@ public class KickController {
 			/*
 			 * ログイン画面を出す。
 			 */
-			reg = new ScreenEventRegister(new HTML(
+			HTML a = new HTML();//アドレス埋め込み、そしてバックグラウンドに押し込む
+			/*
+			 * Googleでひらくような事をすれば、まあOKかなと思うのですが、
+			 * 画面遷移への使い道が増えるので、
+			 * いいんじゃないかと。
+			 */
+//			a.set
+			reg = new ScreenEventRegister(
+					//Webページを読み込む、ためのフレームが有ればいいのかな。
+					new HTML(
 					"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head>  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>  <title>Create cool applications! | dev.twitter.com</title></head><body>    <a href=\"http://dev.twitter.com/start\">Begin</a>    <img src=\"http://a0.twimg.com/images/dev/bookmark.png\" class=\"bookmark\" alt=\"Attention!\" /></body>"
 					//画像
 					//画像へのハンドラ、、どうするかな。
@@ -131,7 +142,7 @@ public class KickController {
 			
 			//リンクが触られたら、ログインに行く。
 			setKickStatus(STATUS_KICK_LOGIN_INIT);
-			procedure("");
+//			procedure("");
 			break;
 		
 		case STATUS_KICK_LOGIN_INIT:
@@ -142,7 +153,13 @@ public class KickController {
 				Image image = new Image();
 				image.setUrl(Resources.INSTANCE.arrow().getURL());
 				reg.fireEvent(new ScreenEvent(1, image));
-				
+				image.addClickHandler(new ClickHandler() {
+					
+					@Override
+					public void onClick(ClickEvent event) {
+						showLoginWindow();	
+					}
+				});
 				//現在このユーザがログインしているのかどうか、知らない。知りにいかないと行けないが、さて？
 				//サイトに入ったら、すぐ通知を受け付ける事が出来る。どのページからでも、自由にログイン出来る。こういう強みはある。
 				//ログインする事を、サジェスト出来る筈。
@@ -156,9 +173,7 @@ public class KickController {
 //						image.setUrl(TestBundle.INSTANCE.arrow().getURL());
 //						reg.fireEvent(new ScreenEvent(1, image));
 //
-						final MyDialogBox diag = new MyDialogBox(this);
-						diag.show();
-						diag.center();	
+						
 //					}
 //				});
 //
@@ -493,6 +508,12 @@ public class KickController {
 	}
 	
 	
+	protected void showLoginWindow() {
+		final MyDialogBox diag = new MyDialogBox(this);
+		diag.show();
+		diag.center();
+	}
+
 	/**
 	 * プッシュを受けての挙動を行う
 	 * @param exec
@@ -979,6 +1000,9 @@ public class KickController {
 					JSONObject key = userData.get("key").isObject();
 					debug.trace("key_"+key);
 					uStCont.setUserKey(key);
+					
+					int imageNumber = (int)userData.get("imageNumber").isNumber().doubleValue();
+					uStCont.setM_imangeNumber(imageNumber);
 				}
 			}
 			

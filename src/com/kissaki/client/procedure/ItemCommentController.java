@@ -55,7 +55,7 @@ public class ItemCommentController {
 		
 		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
 		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
-		debug.trace("commentMasterUserName_"+commentMasterUserName);
+		
 		
 		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
@@ -64,15 +64,18 @@ public class ItemCommentController {
 		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
 		debug.trace("currentMyName_"+currentMyName+"/commentMasterUserName_"+commentMasterUserName);
+		
+		int imageNumber = 0;
+		
 		//自分だったら
 		if (currentMyName.equals(commentMasterUserName)) {//自分で自分のところに書き込んだ
 			//自分から自分のボードに書き込んだ。yetが有れば、処理する。
 			removeMyYetPanel(currentMyName);
-			addUserBoardIfNeed(currentMasterUserKey,currentMyName);
+			addUserBoardIfNeed(currentMasterUserKey,currentMyName, imageNumber);
 			//自分のボードにコメントを書く
 			addCommentToMyBoard(currentMyName, currentCommentBody, currentCommentDate, currentCommentedByString);
 		} else {//他人だったら
-			addUserBoardIfNeed(currentMasterUserKey, commentMasterUserName);
+			addUserBoardIfNeed(currentMasterUserKey, commentMasterUserName, imageNumber);
 			//自分から他人のボードに書き込んだ
 			addCommentToOtherUserBoard(commentMasterUserName, currentCommentBody, currentCommentDate, currentCommentedByString);
 		}
@@ -88,7 +91,6 @@ public class ItemCommentController {
 	public void addCommentFromSomeone(JSONObject commentBlock) {
 		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
 		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
-		debug.trace("commentMasterUserName_"+commentMasterUserName);
 		
 		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
@@ -96,18 +98,19 @@ public class ItemCommentController {
 		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
 		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
-
+		
+		
+		int imageNumber = 0;
+		
 		//他人が自分のところに書き込んだ
 		if (currentMyName.equals(commentMasterUserName)) {
 			//すでに自分で自分に書いていて、ボードが存在しなければ書けない筈。なので、pop消しは行わない。
-			debug.trace("他人が俺のボードに何をする！");
 			
 			addCommentToOtherUserBoard(commentMasterUserName, currentCommentBody, currentCommentDate, currentCommentedByString);
 			
 		} else {//他人が他人のところに書き込んだ(他人にとって他人自身かどうかはどうでもいい)
 			//該当する他人の板をさがし、有れば上書き、無ければつくる。
-			debug.trace("このマスターのボードを探す_"+commentMasterUserName);
-			addUserBoardIfNeed(currentMasterUserKey, commentMasterUserName);
+			addUserBoardIfNeed(currentMasterUserKey, commentMasterUserName, imageNumber);
 			//他人から他人のボードに書き込んだ
 			addCommentToOtherUserBoard(commentMasterUserName, currentCommentBody, currentCommentDate, currentCommentedByString);
 		}
@@ -122,9 +125,9 @@ public class ItemCommentController {
 	 * @param currentMasterUserKey 
 	 * @param currentMyName
 	 */
-	private void addUserBoardIfNeed(JSONObject currentMasterUserKey, String boardMasterName) {
+	private void addUserBoardIfNeed(JSONObject currentMasterUserKey, String boardMasterName, int imageNumber) {
 		if (commentDialogList.size() == 0) {//サイズが0だとitelに引っかかりようが無いので、作る。
-			createNewBoard(currentMasterUserKey, boardMasterName);
+			createNewBoard(currentMasterUserKey, boardMasterName, imageNumber);
 			return;
 		}
 		
@@ -137,7 +140,7 @@ public class ItemCommentController {
 			}
 			
 			if (!commentDialogItel.hasNext()) {//次が無いが、見つかっていない
-				createNewBoard(currentMasterUserKey, boardMasterName);
+				createNewBoard(currentMasterUserKey, boardMasterName, imageNumber);
 				return;
 			}
 		}
@@ -148,9 +151,9 @@ public class ItemCommentController {
 	 * @param currentMasterUserKey 
 	 * @param boardMasterName
 	 */
-	private void createNewBoard(JSONObject currentMasterUserKey, String boardMasterName) {
+	private void createNewBoard(JSONObject currentMasterUserKey, String boardMasterName, int imageNumber) {
 		Image image = new Image();
-		image.setUrl(Resources.INSTANCE.s1().getURL());
+		image.setUrl(getImage(imageNumber));
 		
 		commentDialogList.add(
 				new CommentDialogBox(
@@ -221,14 +224,28 @@ public class ItemCommentController {
 			CommentDialogBox currentCommentDialog = commentDialogItel.next();
 			debug.trace(i+"_こいつを表示_"+currentCommentDialog.getMasterUserNameWithPass());
 			
-			currentCommentDialog.setPopupPosition(100+200*i, 100);
+			currentCommentDialog.setPopupPosition(positionMap[i*2], positionMap[i*2+1]);
 			
-			currentCommentDialog.setHeight("400");
-			currentCommentDialog.setWidth("1800");
 			currentCommentDialog.show();
+			if (i == 7) {
+				debug.trace("サイズオーバーなので逃げる");
+				break;
+			}
 		}
 	}
 
+	int positionMap [] = {
+			50,100,
+			255,80,
+			460,80,
+			665,110,
+			
+			20,310,
+			220,610,
+			425,610,
+			630,315,
+	};
+	
 
 	/**
 	 * 全コメントのリセットを行う
@@ -286,8 +303,10 @@ public class ItemCommentController {
 		}
 		
 		debug.trace("addMyCommentPopup_"+kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart());
+		
 		Image image = new Image();
-		image.setUrl(Resources.INSTANCE.s2().getURL());
+		image.setUrl(getImage(kickCont.getUStCont().getM_imageNumber()));
+		
 		commentDialogList.add(
 			new CommentDialogBox(
 					kickCont, 
@@ -300,7 +319,49 @@ public class ItemCommentController {
 		showComments();
 	}
 
-	
+	/**
+	 * イメージの選択(URLではなく、バカ持ち。だって面倒)
+	 * @param m_imageNumber
+	 * @return
+	 */
+	private String getImage(int m_imageNumber) {
+		switch (m_imageNumber) {
+		case 0:
+
+			return Resources.INSTANCE.s1().getURL();
+		case 1:
+
+			return Resources.INSTANCE.s2().getURL();
+		case 2:
+
+			return Resources.INSTANCE.s3().getURL();
+		case 3:
+
+			return Resources.INSTANCE.s4().getURL();
+		case 4:
+
+			return Resources.INSTANCE.s5().getURL();
+		case 5:
+
+			return Resources.INSTANCE.s6().getURL();
+		case 6:
+
+			return Resources.INSTANCE.s7().getURL();
+		case 7:
+
+			return Resources.INSTANCE.s8().getURL();
+		case 8:
+
+			return Resources.INSTANCE.s9().getURL();
+
+		default:
+			break;
+		}
+		return null;
+	}
+
+
+
 	/**
 	 * 特定ユーザーのYetダイアログを発見、削除する。
 	 * @param userName
