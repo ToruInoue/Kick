@@ -1,11 +1,9 @@
 package com.kissaki.client;
 
 
-import java.util.ArrayList;
 import java.util.Arrays;//array
 import java.util.List;//list
 import java.util.Map;
-import java.util.Random;
 
 
 import com.google.gwt.core.client.GWT;
@@ -23,7 +21,6 @@ import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Image;
-import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
 import com.kissaki.client.canvasController.CanvasController;
 import com.kissaki.client.channel.Channel;
 import com.kissaki.client.channel.ChannelFactory;
@@ -54,7 +51,7 @@ public class KickController {
 	ScreenEventRegister reg;
 	ItemCommentController itemCommentCont;
 	
-	String DEFAULT_REQUEST_PASS = "http://a";
+	String DEFAULT_REQUEST_PASS = "http://images.paraorkut.com/img/funnypics/images/f/fail_cat-12835.jpg";
 	
 	
 	UserStatusController uStCont = null;
@@ -105,8 +102,7 @@ public class KickController {
 		
 		
 		setKickStatus(STATUS_KICK_APPINITIALIZE);
-		
-		procedure("");
+		procedure("startSamplePage");
 	}
 	
 	/**
@@ -115,99 +111,90 @@ public class KickController {
 	public void procedure(String exec) {
 		switch (getKickStatus()) {
 		case STATUS_KICK_APPINITIALIZE:
-			/*
-			 * サンプル画面を出す
-			 */
-			setKickStatus(STATUS_KICK_TESTVIEW_INIT);
+			if (exec.matches("startSamplePage")) {
+				/*
+				 * サンプル画面を出す
+				 */
+				setKickStatus(STATUS_KICK_TESTVIEW_INIT);
+				procedure("testViewInitialize");
+			}
+			
+			
 		case STATUS_KICK_TESTVIEW_INIT:
-			/*
-			 * ログイン画面を出す。
-			 */
-			HTML a = new HTML();//アドレス埋め込み、そしてバックグラウンドに押し込む
-			/*
-			 * Googleでひらくような事をすれば、まあOKかなと思うのですが、
-			 * 画面遷移への使い道が増えるので、
-			 * いいんじゃないかと。
-			 */
-//			a.set
-			reg = new ScreenEventRegister(
-					//Webページを読み込む、ためのフレームが有ればいいのかな。
-					new HTML(
-					"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head>  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>  <title>Create cool applications! | dev.twitter.com</title></head><body>    <a href=\"http://dev.twitter.com/start\">Begin</a>    <img src=\"http://a0.twimg.com/images/dev/bookmark.png\" class=\"bookmark\" alt=\"Attention!\" /></body>"
-					//画像
-					//画像へのハンドラ、、どうするかな。
-			));
+			if (exec.matches("testViewInitialize")) {
+				/*
+				 * ログイン画面を出す。
+				 */
+				HTML a = new HTML();//アドレス埋め込み、そしてバックグラウンドに押し込む
+				/*
+				 * Googleでひらくような事をすれば、まあOKかなと思うのですが、
+				 * 画面遷移への使い道が増えるので、
+				 * いいんじゃないかと。
+				 */
+//				a.set
+				reg = new ScreenEventRegister(
+						//Webページを読み込む、ためのフレームが有ればいいのかな。
+						new HTML(
+						"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head>  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>  <title>Create cool applications! | dev.twitter.com</title></head><body>    <a href=\"http://dev.twitter.com/start\">Begin</a>    <img src=\"http://a0.twimg.com/images/dev/bookmark.png\" class=\"bookmark\" alt=\"Attention!\" /></body>"
+						//画像
+						//画像へのハンドラ、、どうするかな。
+				));
+				setKickStatus(STATUS_KICK_TESTVIEW_PROC);
+				procedure("testViewToLogin");
+			}
 			
 		case STATUS_KICK_TESTVIEW_PROC:
-			
-			//リンクが触られたら、ログインに行く。
-			setKickStatus(STATUS_KICK_LOGIN_INIT);
-//			procedure("");
+			if (exec.matches("testViewToLogin")) {
+
+				//リンクが触られたら、ログインに行く。
+				setKickStatus(STATUS_KICK_LOGIN_INIT);
+				String address = DEFAULT_REQUEST_PASS;
+				
+				JSONObject addressObject = new JSONObject();
+				addressObject.put("imageAddress", new JSONString(address));
+				
+				procedure("startLogin+"+addressObject);
+			}
 			break;
 		
 		case STATUS_KICK_LOGIN_INIT:
-			/*
-			 * ログイン画面を出す。
-			 */
-			try {
+			if (exec.startsWith("startLogin+")) {
+				
+				//アドレスに対するチェックを行う。画像以外プレビューに対応したくない。
+				
+				
+				/*
+				 * ログイン画面を出す。
+				 */
+				String imageURL = exec.substring("startLogin+".length(), exec.length());
+				JSONObject urlObject = JSONParser.parseStrict(imageURL).isObject();
+				String urlString = urlObject.get("imageAddress").isString().toString();
+				
+				debug.trace("ログインしたタイミングで、フォーカスしていた画像や物のURLを入力する");
+				
 				Image image = new Image();
-				image.setUrl(Resources.INSTANCE.arrow().getURL());
+				image.setUrl(urlString);
 				reg.fireEvent(new ScreenEvent(1, image));
 				image.addClickHandler(new ClickHandler() {
 					
 					@Override
 					public void onClick(ClickEvent event) {
-						showLoginWindow();	
+						showLoginWindow();
 					}
 				});
-				//現在このユーザがログインしているのかどうか、知らない。知りにいかないと行けないが、さて？
-				//サイトに入ったら、すぐ通知を受け付ける事が出来る。どのページからでも、自由にログイン出来る。こういう強みはある。
-				//ログインする事を、サジェスト出来る筈。
 				
-//				final Button popupButton = new Button("Show Dialog");
-//				popupButton.addClickHandler(new ClickHandler(){
-//					@Override
-//					public void onClick(ClickEvent event) {
-//
-//						Image image = new Image();
-//						image.setUrl(TestBundle.INSTANCE.arrow().getURL());
-//						reg.fireEvent(new ScreenEvent(1, image));
-//
-						
-//					}
-//				});
-//
-//				reg.fireEvent(new ScreenEvent(1, popupButton));
-//
-//
-//				TextCell textCell = new TextCell();
-//				CellList<String> cellList = new CellList<String>(textCell);
-//				final SingleSelectionModel<String> selectionModel = 
-//					new SingleSelectionModel<String>();
-//				cellList.setSelectionModel(selectionModel);
-//				selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
-//					@Override
-//					public void onSelectionChange(SelectionChangeEvent event) {//描画してから出したいですね。
-//						
-//						Window.alert("Clicked! " + selectionModel.getSelectedObject());
-//					}
-//				});
-//				
-//				cellList.setRowData(1, Months);
-//				reg.fireEvent(new ScreenEvent(1, cellList));
-			} catch (UmbrellaException e) {
-				debug.trace("e_"+e.getCauses());
+
+				if (exec.matches("No Match..")) {
+					debug.trace("間違えました");
+				}
+				
+				setKickStatus(STATUS_KICK_LOGIN_PROC);
 			}
 			
-			if (exec.matches("No Match..")) {
-				debug.trace("間違えました");
-			}
-			
-			setKickStatus(STATUS_KICK_LOGIN_PROC);
 			
 		case STATUS_KICK_LOGIN_PROC:
 			//ログイン処理を行うフェーズに移行する
-			if (exec.matches("login実行")) {
+			if (exec.matches("loginProcedure")) {
 				//実行！
 				String nameWithPass = uStCont.getUserName()+":"+uStCont.getUserPass();
 				debug.trace("nameWithPass_"+nameWithPass);
@@ -245,13 +232,17 @@ public class KickController {
 			 * ログインが成功した筈。
 			 */
 		case STATUS_KICK_LOGIN_SUCCEEDED:
+			/*
+			 * チャンネルの開始、繋ぎ終わってから次のフェーズへ
+			 */
 			if (exec.startsWith("Channel_Open:")) {
 				String jsonString = exec.subSequence("Channel_Open:".length(), exec.length()).toString();
-				
-				setUpUserKey(jsonString);
-				//画面の片付けとかも行う。
-				
-				//ここで遷移がぶっちぎれて、Channelだよりになる。
+				setUpUserKey(jsonString);//ユーザー情報が整った状態
+			}
+			
+			if (exec.matches("SocketOpened")) {
+				setKickStatus(STATUS_KICK_OWN_INIT);
+				procedure("initializeOwning");
 			}
 			
 			break;
@@ -260,28 +251,33 @@ public class KickController {
 			 * channel接続が通った状態
 			 */
 		case STATUS_KICK_OWN_INIT:
-			uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
-			setKickStatus(STATUS_KICK_OWN_PROC);
-			/*
-			 * ユーザーキーと所持アイテムのキーで召還する。
-			 * キューにためておいた通信を行う。そんだけ。
-			 */
-			procQueExecute(uStCont.getUserKey());
-			
-			
-			//ローディング画面表示する
-			cCont = new CanvasController(this,uStCont.getUserKey());
-			cCont.initCanvas();
-			reg.fireEvent(new ScreenEvent(1, cCont.canvas()));
-			
+			if(exec.matches("initializeOwning")) {
+				setKickStatus(STATUS_KICK_OWN_PROC);
+				
+				/*
+				 * ユーザーキーと所持アイテムのキーで召還する。
+				 * キューにためておいた通信を行う。そんだけ。
+				 */
+				uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+				procQueExecute(uStCont.getUserKey());
+				
+				
+				//ローディング画面表示する
+				cCont = new CanvasController(this,uStCont.getUserKey());
+				cCont.initCanvas();
+	//			reg.fireEvent(new ScreenEvent(1, cCont.canvas()));
+				
+				//画面に名前でも着けるか。
+				HTML yourOwnItems = new HTML("There are your own items");
+				reg.fireEvent(new ScreenEvent(1, yourOwnItems));
+			}
 		case STATUS_KICK_OWN_PROC:
+			
 			//アイテムを表示する
 			if (exec.matches("アイテム取得開始")) {
 				//描画のアップデートを行う、、モデルの件数みてがんばればいいかな。
 				debug.trace("アイテム取得が開始しました");
 			}
-			
-			
 			
 			
 			if (exec.startsWith("ItemUpdated+")) {//アイテムが更新/加算されたので、再描画を行う
@@ -306,6 +302,13 @@ public class KickController {
 				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
 			}
 			
+			if (exec.startsWith("tagUpdated+")) {
+				String execution = exec.substring("tagUpdated+".length(),  exec.length());
+				
+				debug.trace("タグがアップデートされました_"+execution);
+				
+			}
+			
 			/*
 			 * アイテムがタッチされたら、そのコメント一覧へ
 			 * 所有者の情報で、だれがどんなタグ付けてるか欲しいので、見に行く。
@@ -313,8 +316,9 @@ public class KickController {
 			if (exec.startsWith("ItemTapped+")) {
 				setKickStatus(STATUS_KICK_OWNERS_INIT);
 				//ロードするアイテムのキーを受け取り、コメントの情報を表示する
-				String key = exec.substring("ItemTapped+".length(),  exec.length());
-				procedure("LoadingOwnersOfItem+"+key);
+				String userKey = exec.substring("ItemTapped+".length(),  exec.length());
+				debug.trace("userKey_"+userKey);
+				procedure("LoadingOwnersOfItem+"+userKey);
 				
 				//itemKeyから、アイテムのオーナーの情報を聞きに行く
 				
@@ -328,6 +332,11 @@ public class KickController {
 			 * (、、必要がある、のか？　このアイテムについてのコメントは、このアイテムに着いている。)
 			 */
 		case STATUS_KICK_OWNERS_INIT:
+			if (exec.startsWith("存在しないキー")) {
+				uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+				procQueExecute(uStCont.getUserKey());
+			}
+			
 			if (exec.startsWith("LoadingOwnersOfItem+")) {
 				setKickStatus(STATUS_KICK_OWNERS_PROC);
 				
@@ -349,9 +358,14 @@ public class KickController {
 				JSONObject itemKey2 = itemKeyObject.get("itemKey").isObject();
 				itemCommentCont = new ItemCommentController(this, uStCont.getUserKey(), itemKey2);
 //				itemCommentCont.testInitialize();//テスト、適当に初期化
+				
+				HTML ownersOfItems = new HTML("There are owners of this item");
+				reg.fireEvent(new ScreenEvent(1, ownersOfItems));
 			}
 			
 		case STATUS_KICK_OWNERS_PROC:
+			debug.trace("STATUS_KICK_OWNERS_PROC_exec_"+exec);
+			
 //			if (exec.startsWith("TagUpload+")) {
 ////				入力された文字列を、自分がマスターの自分の言葉として足す
 //				//watch touch 
@@ -389,7 +403,7 @@ public class KickController {
 				String commentData = exec.substring("MyCommentGet+".length(), exec.length());
 				
 				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
-				debug.trace("commentBlock_"+commentBlock);
+				debug.trace("imageNumber_commentBlock_"+commentBlock);
 				
 				itemCommentCont.addCommentFromMyself(commentBlock);
 			}
@@ -397,15 +411,10 @@ public class KickController {
 			if (exec.startsWith("SomeCommentGet+")) {//他人からのコメント
 				debug.trace("だれかからのコメントが来た");
 				String commentData = exec.substring("SomeCommentGet+".length(), exec.length());
-
+				
 				JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
-				debug.trace("commentBlock_"+commentBlock);
-				/*
-				 * {"m_commentMasterID":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, 
-				 * "m_commentBody":"%E3%81%A9%E3%81%86%E3%81%8B%E3%81%AA", 
-				 * "m_commentedBy":{"kind":"user", "id":0, "name":"aaaa@bbbb"}, 
-				 * "key":{"kind":"comment", "id":2}}
-				 */
+				
+				
 				itemCommentCont.addCommentFromSomeone(commentBlock);
 			}
 			
@@ -593,20 +602,30 @@ public class KickController {
 		 */
 		if (commandString.contains("LATEST_COMMENT_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace(uStCont.getUserName()+">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-				debug.trace(uStCont.getUserName()+"_from自分なので、自分がリクエストした奴");
 				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
 				
 				debug.trace("コメントデータをゲット_"+commandString);
+				JSONObject blockWithNumber = new JSONObject();
+				JSONNumber gotUserImageNumber = root.get("userImageNumber").isNumber();
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
-				procedure("MyCommentGet+"+gotCommentData);
-			} else {
-				debug.trace(uStCont.getUserName()+"--------------------------------------------------------");
-				debug.trace(uStCont.getUserName()+"_他人からのリクエストで、コメントデータが届いた_"+getUserNameFromUserKey(root));
 				
-				debug.trace("コメントデータをゲット_"+commandString);
+				blockWithNumber.put("userImageNumber", gotUserImageNumber);
+				blockWithNumber.put("wholeCommentData", gotCommentData);
+				
+				debug.trace("blockWithNumber_"+blockWithNumber);
+				
+				
+				procedure("MyCommentGet+"+blockWithNumber);
+			} else {
+				JSONObject blockWithNumber = new JSONObject();
+				JSONNumber gotUserImageNumber = root.get("userImageNumber").isNumber();
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
-				procedure("SomeCommentGet+"+gotCommentData);
+				
+				blockWithNumber.put("userImageNumber", gotUserImageNumber);
+				blockWithNumber.put("wholeCommentData", gotCommentData);
+				
+				
+				procedure("SomeCommentGet+"+blockWithNumber);
 			}
 		}
 		
@@ -620,8 +639,14 @@ public class KickController {
 				itemCommentCont.removeMyYetPanel(uStCont.getUserName());
 				
 				debug.trace("コメントデータをゲット_"+commandString);
+				JSONObject blockWithNumber = new JSONObject();
+				JSONNumber gotUserImageNumber = root.get("userImageNumber").isNumber();
 				JSONObject gotCommentData = root.get("wholeCommentData").isObject();
-				procedure("MyCommentGet+"+gotCommentData);
+				
+				blockWithNumber.put("userImageNumber", gotUserImageNumber);
+				blockWithNumber.put("wholeCommentData", gotCommentData);
+				
+				procedure("MyCommentGet+"+blockWithNumber);
 			}
 		}
 		
@@ -633,7 +658,7 @@ public class KickController {
 				//TODO タグリクエストの完了
 				
 				//uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
-				procedure("tagUpdated+"+commandString);//TODO このタグが更新されたので、要素を更新する、、、、のだが、まあ、ボタンなので、内容更新がめんどい。
+				procedure("tagUpdated+"+root);
 			} else {
 				debug.trace("他人のタグがアップデートされた_"+getUserNameFromUserKey(root));
 			}
@@ -735,6 +760,9 @@ public class KickController {
 			if (isMyself(root, uStCont.getUserKey())) {
 				value = root.get("itemAddress").isString();
 				debug.trace("ALREADY_ADDED_TO_USER_あなたのアイテムリストにアイテムが既に入っています_"+value);
+			
+//				setKickStatus(STATUS_KICK_OWNERS_INIT);
+//				procedure("LoadingOwnersOfItem+"+uStCont.getUserKey());
 			}
 		}
 		
@@ -1016,7 +1044,6 @@ public class KickController {
 			
 			uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
 			
-			setKickStatus(STATUS_KICK_OWN_INIT);
 			
 			if (channelID != null) {
 				setChannelID(channelID.toString());
@@ -1085,7 +1112,6 @@ public class KickController {
 			debug.trace("オブジェクト？");
 			
 			JSONObject obj = JSONParser.parseStrict(jsonString).isObject();
-			debug.trace("もらた");
 			
 
 			
@@ -1148,7 +1174,7 @@ public class KickController {
 
 			public void onOpen() {
 				debug.trace(uStCont.getUserName()+"_channel 開きました");
-				procedure("");
+				procedure("SocketOpened");
 			}
 			
 			public void onMessage(String encodedData) {
@@ -1197,7 +1223,7 @@ public class KickController {
 		inputUserName(name);
 		inputUserPass(pass);
 		
-		procedure("login実行");
+		procedure("loginProcedure");
 	}
 	
 	/**

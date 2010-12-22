@@ -56,8 +56,6 @@ public class CommentDialogBox extends PopupPanel {
 		this.m_userImage = userImage;
 		this.m_comment = comment;
 		
-		
-		
 		commentSpace = new TextArea();
 		commentSpace.setPixelSize(180, 85);
 		VerticalPanel panel = new VerticalPanel();

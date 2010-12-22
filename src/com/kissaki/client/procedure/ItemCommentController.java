@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.mortbay.util.ajax.JSON;
+
+import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.ui.Image;
@@ -52,20 +55,25 @@ public class ItemCommentController {
 	 * @param currentCommentedByString
 	 */
 	public void addCommentFromMyself(JSONObject commentBlock) {
+		debug.trace("addCommentFromMyself_commentBlock_"+commentBlock);
 		
-		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
+		JSONObject rootObject = commentBlock.get("wholeCommentData").isObject();
+		JSONObject currentMasterUserKey = rootObject.get("m_commentMasterID").isObject();
 		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
 		
 		
-		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
+		String currentCommentBody = rootObject.get("m_commentBody").isString().toString();
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
-		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
+		JSONObject currentCommentedBy = rootObject.get("m_commentedBy").isObject();
 		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
 		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
-		debug.trace("currentMyName_"+currentMyName+"/commentMasterUserName_"+commentMasterUserName);
+		debug.trace("currentMyName_"+currentMyName+"	/commentMasterUserName_"+commentMasterUserName);
 		
-		int imageNumber = 0;
+		JSONNumber numberObject = commentBlock.get("userImageNumber").isNumber();
+		debug.trace("なんにゃら_"+numberObject);
+		int imageNumber = (int)numberObject.doubleValue();
+		debug.trace("addCommentFromMyself_numberObject_"+numberObject);
 		
 		//自分だったら
 		if (currentMyName.equals(commentMasterUserName)) {//自分で自分のところに書き込んだ
@@ -89,18 +97,21 @@ public class ItemCommentController {
 	 * @param commentBlock
 	 */
 	public void addCommentFromSomeone(JSONObject commentBlock) {
-		JSONObject currentMasterUserKey = commentBlock.get("m_commentMasterID").isObject();
+		JSONObject rootObject = commentBlock.get("wholeCommentData").isObject();
+		
+		JSONObject currentMasterUserKey = rootObject.get("m_commentMasterID").isObject();
 		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
 		
-		String currentCommentBody = commentBlock.get("m_commentBody").isString().toString();
+		String currentCommentBody = rootObject.get("m_commentBody").isString().toString();
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
-		JSONObject currentCommentedBy = commentBlock.get("m_commentedBy").isObject();
+		JSONObject currentCommentedBy = rootObject.get("m_commentedBy").isObject();
 		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
 		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
 		
+		JSONNumber imageNumberObject = rootObject.get("userImageNumber").isNumber();
+		int imageNumber = (int)imageNumberObject.doubleValue();
 		
-		int imageNumber = 0;
 		
 		//他人が自分のところに書き込んだ
 		if (currentMyName.equals(commentMasterUserName)) {

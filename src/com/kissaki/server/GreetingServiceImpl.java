@@ -205,12 +205,9 @@ GreetingService {
 			currentCommentDataModel.setKey(commentKey);
 			currentCommentDataModel.setM_commentBody(commentString);
 			currentCommentDataModel.setM_commentedBy(currentUserDataModel.getKey());
-			debug.trace("保存直前-1");
-			currentCommentDataModel.setM_commentMasterID(currentMasterUserDataModel.getKey());//ここでカットぶ
+			currentCommentDataModel.setM_commentMasterID(currentMasterUserDataModel.getKey());
 			
-			debug.trace("保存直前");
 			Datastore.put(currentCommentDataModel);
-			debug.trace("保存直後");
 			
 			currentItem.getM_commentList().add(currentCommentDataModel.getKey());
 			Datastore.put(currentItem);
@@ -407,13 +404,14 @@ GreetingService {
 			//ゲットし終わったら、コメントを取得
 			for (Iterator<CommentDataModel> commentItel = comment.iterator(); commentItel.hasNext();) {
 				CommentDataModel currentComment = commentItel.next();
-				
+				UserDataModel commentedUserData = getUserModelFromKeyName(currentComment.getM_commentMasterID().getName());
 				Map<String, Object> map = new HashMap<String, Object>();
 
 				map.put("requested", rootObject);
 				map.put("wholeCommentData", currentComment);
 				map.put("command", "LATEST_COMMENT_DATA");
 				map.put("userInfo", myself.getKey());
+				map.put("userImageNumber", commentedUserData.getImageNumber());
 				
 				String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
 				
@@ -460,13 +458,14 @@ GreetingService {
 			//ゲットし終わったら、コメントを取得
 			for (Iterator<CommentDataModel> commentItel = comment.iterator(); commentItel.hasNext();) {
 				CommentDataModel currentComment = commentItel.next();
-				
+				UserDataModel commentedUserData = getUserModelFromKeyName(currentComment.getM_commentMasterID().getName());
 				Map<String, Object> map = new HashMap<String, Object>();
 
 				map.put("requested", rootObject);
 				map.put("wholeCommentData", currentComment);
 				map.put("command", "ALL_COMMENT_DATA");
 				map.put("userInfo", myself.getKey());
+				map.put("userImageNumber", commentedUserData.getImageNumber());//コメント主のナンバーが必要
 				
 				String s = currentComment.getM_commentMasterID().getName();//gson.toJson(currentComment.getM_commentMasterID());
 				

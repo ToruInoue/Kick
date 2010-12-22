@@ -1,5 +1,9 @@
 package com.kissaki.client.procedure;
 
+import java.util.Arrays;
+import java.util.List;
+
+import com.google.gwt.cell.client.TextCell;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyDownEvent;
@@ -7,16 +11,22 @@ import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.cellview.client.CellList;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.view.client.SelectionChangeEvent;
+import com.google.gwt.view.client.SingleSelectionModel;
 
 import com.kissaki.client.KickController;
 import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentItemDataModel;
+
+
 
 /**
  * アイテム自体を表示する
@@ -26,6 +36,10 @@ import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentIt
 public class ItemDialogBox extends DialogBox {
 	Debug debug;
 	
+	private static final List<String> Tags = Arrays.asList(
+	          "Like", "Want", "Have", "Had",
+	          "Good","とか"
+	     );
 	
 	private KickController kCont;
 	
@@ -117,6 +131,22 @@ public class ItemDialogBox extends DialogBox {
 				}
 			}
 		});
+		
+		TextCell textCell = new TextCell();
+		CellList<String> cellList = new CellList<String>(textCell);
+		final SingleSelectionModel<String> selectionModel = 
+			new SingleSelectionModel<String>();
+		cellList.setSelectionModel(selectionModel);
+		selectionModel.addSelectionChangeHandler(new SelectionChangeEvent.Handler() {
+			@Override
+			public void onSelectionChange(SelectionChangeEvent event) {//描画してから出したいですね。
+				
+				Window.alert("Clicked! " + selectionModel.getSelectedObject());
+			}
+		});
+		
+		cellList.setRowData(1, Tags);
+		
 		panel.add(newTagBox);
 		setWidget(panel);
 		setPopupPosition(300, 280);
