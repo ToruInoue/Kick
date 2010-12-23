@@ -27,7 +27,7 @@ import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
 import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.itemDataModel.ItemDataModel;
-import com.kissaki.client.login.MyDialogBox;
+import com.kissaki.client.login.MyLoginBox;
 import com.kissaki.client.procedure.CommentDialogBox;
 import com.kissaki.client.procedure.ItemCommentController;
 import com.kissaki.client.procedure.ItemDialogBox;
@@ -116,6 +116,8 @@ public class KickController {
 				 * サンプル画面を出す
 				 */
 				setKickStatus(STATUS_KICK_TESTVIEW_INIT);
+				
+				
 				procedure("testViewInitialize");
 			}
 			
@@ -125,20 +127,25 @@ public class KickController {
 				/*
 				 * ログイン画面を出す。
 				 */
-				HTML a = new HTML();//アドレス埋め込み、そしてバックグラウンドに押し込む
+				HTML a = new HTML("<p id=\"spinner\">Please wait while we do what we do best.</p>");//アドレス埋め込み、そしてバックグラウンドに押し込む  この要素を入れるタイミングで確かに再描画とか発生するわな。
+//				a = new HTML("");
+				
+				debug.trace("到達");
 				/*
 				 * Googleでひらくような事をすれば、まあOKかなと思うのですが、
 				 * 画面遷移への使い道が増えるので、
 				 * いいんじゃないかと。
 				 */
-//				a.set
 				reg = new ScreenEventRegister(
+						a
 						//Webページを読み込む、ためのフレームが有ればいいのかな。
-						new HTML(
-						"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head>  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>  <title>Create cool applications! | dev.twitter.com</title></head><body>    <a href=\"http://dev.twitter.com/start\">Begin</a>    <img src=\"http://a0.twimg.com/images/dev/bookmark.png\" class=\"bookmark\" alt=\"Attention!\" /></body>"
-						//画像
-						//画像へのハンドラ、、どうするかな。
-				));
+						//HTMLに画像を入れ込む分には、簡単に出来る。
+//						new HTML(
+//						"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"> <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><head>  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"/>  <title>Create cool applications! | dev.twitter.com</title></head><body>    <a href=\"http://dev.twitter.com/start\">Begin</a>    <img src=\"http://a0.twimg.com/images/dev/bookmark.png\" class=\"bookmark\" alt=\"Attention!\" /></body>"
+//						//画像
+//						//画像へのハンドラ、、どうするかな。
+//				)
+				);
 				setKickStatus(STATUS_KICK_TESTVIEW_PROC);
 				procedure("testViewToLogin");
 			}
@@ -166,20 +173,25 @@ public class KickController {
 				/*
 				 * ログイン画面を出す。
 				 */
-				String imageURL = exec.substring("startLogin+".length(), exec.length());
+				final String imageURL = exec.substring("startLogin+".length(), exec.length());
+				
+				
 				JSONObject urlObject = JSONParser.parseStrict(imageURL).isObject();
 				String urlString = urlObject.get("imageAddress").isString().toString();
 				
 				debug.trace("ログインしたタイミングで、フォーカスしていた画像や物のURLを入力する");
 				
 				Image image = new Image();
-				image.setUrl(urlString);
-				reg.fireEvent(new ScreenEvent(1, image));
+//				image.setUrl(urlString);
+				image.setUrl(Resources.INSTANCE.s1().getURL());
+				reg.fireEvent(new ScreenEvent(1, image));//なるほど、全て上書きされる訳だ。この部分を制御できればいいんだな。書き換え部分とそうでない部分の制御を、よりセンシティブに行う必要がある。
+				//ちょうどスクリーンマネージャーの限界だったので、ここら辺で見切るとよかろう。
+				
 				image.addClickHandler(new ClickHandler() {
 					
 					@Override
 					public void onClick(ClickEvent event) {
-						showLoginWindow();
+						showLoginWindow(imageURL);
 					}
 				});
 				
@@ -191,17 +203,32 @@ public class KickController {
 				setKickStatus(STATUS_KICK_LOGIN_PROC);
 			}
 			
-			
 		case STATUS_KICK_LOGIN_PROC:
-			//ログイン処理を行うフェーズに移行する
-			if (exec.matches("loginProcedure")) {
+			
+
+			/*
+			 * ログイン処理の実行
+			 * まだ入力がされただけの段階なので、
+			 * ログイン出来なければやり直し、になる。
+			 * どこまでやり直しにさせるかは、サービス次第。
+			 */
+			if (exec.startsWith("loginWithURLPath+")) {
+				String itemString = exec.substring("loginWithURLPath+".length(), exec.length());
+				
 				//実行！
 				String nameWithPass = uStCont.getUserName()+":"+uStCont.getUserPass();
 				debug.trace("nameWithPass_"+nameWithPass);
 				
-				//現在うつってる物を、送信する予定としてリクエストに加えておく TODO DEFAULT_REQUEST_PASSを固定で送ってる、このサイトのコレのアドレス、という形で。
-				uStCont.addRequestToRequestQueue(DEFAULT_REQUEST_PASS, ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
+				/*
+				 * ログイン時のアイテムのアドレスをセーブしておく
+				 */
+				String currentItemURLString = JSONParser.parseStrict(itemString).isObject().get("imageAddress").isString().toString();
+				uStCont.setM_loginItemPath(currentItemURLString);
 				
+				/*
+				 * アイテムをAddする必要があるのか、既に持っているのか、この時点で判らないので、キューにいれておく
+				 */
+				uStCont.addRequestToRequestQueue(currentItemURLString, ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
 					
 				//サーバサイドにユーザー名とパスを送る
 				greetingService.greetServer("userLogin+"+nameWithPass+"",
@@ -211,7 +238,6 @@ public class KickController {
 					}
 					
 					public void onSuccess(String result) {
-						debug.trace("onSuccess_result_"+result);
 						if (result.matches("ログインパスワードが違います")) {//やりなおし
 							setKickStatus(STATUS_KICK_LOGIN_INIT);
 							procedure("No Match..");
@@ -241,47 +267,40 @@ public class KickController {
 			}
 			
 			if (exec.matches("SocketOpened")) {
-				setKickStatus(STATUS_KICK_OWN_INIT);
+
+				procQueExecute(uStCont.getUserKey());//アイテムの追加が実行される筈
+			
+				cCont = new CanvasController(this,uStCont.getUserKey());
+				cCont.initCanvas();
+				
+//				setKickStatus(STATUS_KICK_OWN_INIT);//アイテム全件を取得する
+				setKickStatus(STATUS_KICK_OWNERS_INIT);//アイテム一件を取得する
 				procedure("initializeOwning");
 			}
 			
 			break;
 			
 			/*
+			 * これ以降は、
 			 * channel接続が通った状態
 			 */
 		case STATUS_KICK_OWN_INIT:
-			if(exec.matches("initializeOwning")) {
+			if(exec.startsWith("initializeOwning")) {
 				setKickStatus(STATUS_KICK_OWN_PROC);
 				
-				/*
-				 * ユーザーキーと所持アイテムのキーで召還する。
-				 * キューにためておいた通信を行う。そんだけ。
-				 */
+				//この時点での所持アイテムのキー全てを召還対象にする
+				setUpUserItemRequest(uStCont.getUserKey(), uStCont.getM_userItemArray());
+				
+				//自分の最新データの取得
 				uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
 				procQueExecute(uStCont.getUserKey());
-				
-				
-				//ローディング画面表示する
-				cCont = new CanvasController(this,uStCont.getUserKey());
-				cCont.initCanvas();
-	//			reg.fireEvent(new ScreenEvent(1, cCont.canvas()));
 				
 				//画面に名前でも着けるか。
 				HTML yourOwnItems = new HTML("There are your own items");
 				reg.fireEvent(new ScreenEvent(1, yourOwnItems));
 			}
 		case STATUS_KICK_OWN_PROC:
-			
-			//アイテムを表示する
-			if (exec.matches("アイテム取得開始")) {
-				//描画のアップデートを行う、、モデルの件数みてがんばればいいかな。
-				debug.trace("アイテム取得が開始しました");
-			}
-			
-			
 			if (exec.startsWith("ItemUpdated+")) {//アイテムが更新/加算されたので、再描画を行う
-				debug.trace("ItemUpdatedに来てる");
 				String itemDatas = exec.substring("ItemUpdated+".length(), exec.length());
 				
 				JSONArray itemArray = JSONParser.parseStrict(itemDatas).isArray();
@@ -332,10 +351,29 @@ public class KickController {
 			 * (、、必要がある、のか？　このアイテムについてのコメントは、このアイテムに着いている。)
 			 */
 		case STATUS_KICK_OWNERS_INIT:
-			if (exec.startsWith("存在しないキー")) {
+			/*
+			 * 起動時に直接この画面に来る場合
+			 */
+			if (exec.startsWith("initializeOwning")) {
+				setKickStatus(STATUS_KICK_OWNERS_PROC);
+				
+				//フォーカスをログイン時のアイテムに設定する
+				uStCont.setM_nowFocusingItemAddress(uStCont.getM_loginItemPath());
+				
+				//自分の最新データを取得
 				uStCont.addRequestToRequestQueue(uStCont.getUserKey().toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
 				procQueExecute(uStCont.getUserKey());
+				
+				HTML ownersOfItems = new HTML("There are owners of this item");
+				reg.fireEvent(new ScreenEvent(1, ownersOfItems));
+				
+				/*
+				 * アイテムの結果が帰ってくる筈なので、
+				 * 帰ってきたら、そのキーを元に
+				 * コメント取得を行う。
+				 */
 			}
+			
 			
 			if (exec.startsWith("LoadingOwnersOfItem+")) {
 				setKickStatus(STATUS_KICK_OWNERS_PROC);
@@ -364,7 +402,7 @@ public class KickController {
 			}
 			
 		case STATUS_KICK_OWNERS_PROC:
-			debug.trace("STATUS_KICK_OWNERS_PROC_exec_"+exec);
+//			debug.trace("STATUS_KICK_OWNERS_PROC_exec_"+exec);
 			
 //			if (exec.startsWith("TagUpload+")) {
 ////				入力された文字列を、自分がマスターの自分の言葉として足す
@@ -372,8 +410,45 @@ public class KickController {
 //				String key = exec.substring("TagUpload+".length(),  exec.length());
 //			}
 			
-			if (exec.matches("ItemUpdated+")) {//アイテムが加算されたので、再描画を行う
-				//cCont.updateItemcInfo(uStCont.getCurrentItems());
+			/*
+			 * アップデート自体はログイン時にかけているのだが、わざわざ
+			 * 自前でもっていたログイン時のデータを、更新後のデータから検索、取得している。
+			 * アップデートがすんだんだから、専用の「この名前のアイテムしりませんか」をかけてもいいのではないか？
+			 */
+			if (exec.startsWith("ItemUpdated+")) {//アイテムが更新/加算されたので、再描画を行う
+				String itemDatas = exec.substring("ItemUpdated+".length(), exec.length());
+				
+				JSONArray itemArray = JSONParser.parseStrict(itemDatas).isArray();
+				debug.trace("itemArray_"+itemArray);
+				
+				//ログイン時にフォーカスしているアドレス
+				String currentLoginKey = uStCont.getM_loginItemPath();
+				debug.trace("currentLoginKey_"+currentLoginKey);
+				
+				//現在フォーカスしているアイテム
+				String currentFocus = uStCont.getM_nowFocusingItemAddress();
+				
+				for (int i = 0; i < itemArray.size(); i++) {
+					JSONObject currentItem = itemArray.get(i).isObject();
+					JSONObject currentItemKey = currentItem.get("key").isObject();
+					String currentItemName = currentItemKey.get("name").isString().toString();
+					
+					if (currentItemName.equals(currentLoginKey)) {//名前が一致したら、その時点でのアイテムを取得する
+						JSONObject itemKeyWithUserKey = new JSONObject();
+						itemKeyWithUserKey.put("itemKey", currentItemKey);
+						itemKeyWithUserKey.put("userKey", uStCont.getUserKey());
+						
+						JSONArray newItemArray = new JSONArray();
+						newItemArray.set(0, currentItem);
+						cCont.updateItemcInfo(newItemArray);
+						
+						uStCont.addRequestToRequestQueue(itemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
+						procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+						break;
+					}
+					debug.trace(i+"_まだ無いみたい_currentLoginKey_"+currentLoginKey+"/currentItemName_"+currentItemName);	
+				}
+				
 			}
 			
 			if (exec.startsWith("InputYourText+")) {
@@ -517,8 +592,8 @@ public class KickController {
 	}
 	
 	
-	protected void showLoginWindow() {
-		final MyDialogBox diag = new MyDialogBox(this);
+	protected void showLoginWindow(String loginWithURL) {
+		final MyLoginBox diag = new MyLoginBox(this, loginWithURL);
 		diag.show();
 		diag.center();
 	}
@@ -553,7 +628,7 @@ public class KickController {
 		}
 		
 		if (command != null) {
-			debug.trace("command_"+command);
+//			debug.trace("command_"+command);
 			commandString = command.toString();
 		}
 		
@@ -666,7 +741,6 @@ public class KickController {
 		
 		if (commandString.contains("ITEM_ADDED_TO_USER")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("このユーザーのアイテムがこのユーザーに加算された_"+root);
 				value = root.get("currentItemkey").isString();
 				
 				//今度は取得のリクエストをするのだ、か、ログイン処理をするか。
@@ -680,12 +754,11 @@ public class KickController {
 		
 		if (commandString.contains("ITEM_CREATED")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("このユーザーによって、このユーザーのアイテムがつくられたようです");
+//				debug.trace("このユーザーによって、このユーザーのアイテムがつくられたようです");
 			} else {
-				debug.trace("だれかによって、このユーザーのアイテムがつくられたようです_"+getUserNameFromUserKey(root));
+//				debug.trace("だれかによって、このユーザーのアイテムがつくられたようです_"+getUserNameFromUserKey(root));
 			}
 			
-			debug.trace("ITEM_CREATED_このアイテムが設定されました_"+value);
 			//アイテムのリクエストが終了したので、ステータスを変える
 		}
 		
@@ -694,9 +767,9 @@ public class KickController {
 		 */
 		if (commandString.contains("PUSH_ITEM")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("For myself From myself");
+//				debug.trace("For myself From myself");
 			} else {
-				debug.trace("For myself from someone");
+//				debug.trace("For myself from someone");
 			}
 			try {
 				JSONObject item = root.get("item").isObject();
@@ -711,7 +784,6 @@ public class KickController {
 					JSONString itemKeyName = itemKeyObject.get("name").isString();
 					itemKeyNameString = itemKeyName.toString();
 					
-					debug.trace("itemKeyNameString_"+itemKeyNameString);
 					
 					uStCont.completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
 					
@@ -750,7 +822,7 @@ public class KickController {
 		if (commandString.contains("ITEM_ALREADY_OWN")) {
 			if (isMyself(root, uStCont.getUserKey())) {
 				value = root.get("itemAddressKey").isString();
-				debug.trace("ITEM_ALREADY_OWN_このアイテムはすでにあなたによって所持されています_"+value);
+//				debug.trace("ITEM_ALREADY_OWN_このアイテムはすでにあなたによって所持されています_"+value);
 			} else {
 				//誰かから、このアイテムを持っています、という通信が来た
 			}
@@ -759,8 +831,7 @@ public class KickController {
 		if (commandString.contains("ALREADY_ADDED_TO_USER")) {
 			if (isMyself(root, uStCont.getUserKey())) {
 				value = root.get("itemAddress").isString();
-				debug.trace("ALREADY_ADDED_TO_USER_あなたのアイテムリストにアイテムが既に入っています_"+value);
-			
+				
 //				setKickStatus(STATUS_KICK_OWNERS_INIT);
 //				procedure("LoadingOwnersOfItem+"+uStCont.getUserKey());
 			}
@@ -769,7 +840,7 @@ public class KickController {
 		
 		if (commandString.contains("CURRENT_ITEM_DATA")) {
 			if (isMyself(root, uStCont.getUserKey())) {
-				debug.trace("CURRENT_ITEM_DATA_root_"+root);
+//				debug.trace("CURRENT_ITEM_DATA_root_"+root);
 				
 				JSONArray array = root.get("userOwnItems").isArray();
 				
@@ -824,7 +895,7 @@ public class KickController {
 		request = uStCont.getExecutableQueuedRequest();
 		
 		while (request != null) {
-			debug.trace("request_"+request);
+//			debug.trace("request_"+request);
 			/*
 			 * アイテムからタグを取得する
 			 */
@@ -857,7 +928,7 @@ public class KickController {
 					}
 					
 					public void onSuccess(String result) {
-						debug.trace("success!_"+result);
+//						debug.trace("REQUEST_TYPE_ADDNEWTAG_success_"+result);
 						procedure("タグ付加完了");
 					}
 				}
@@ -869,6 +940,7 @@ public class KickController {
 			 * アドレスのみで与えている。
 			 */
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD) != null) {
+				debug.trace("REQUEST_TYPE_ADD");
 				String itemAddressKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADD);
 				
 				//ここで、JSONにしてしまう
@@ -886,7 +958,7 @@ public class KickController {
 					}
 
 					public void onSuccess(String result) {
-						debug.trace("setItemData+success!_"+result);
+//						debug.trace("REQUEST_TYPE_ADD_setItemData+success!_"+result);
 					}
 				}
 				);
@@ -894,8 +966,8 @@ public class KickController {
 			
 			//アイテムを取得する
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM) != null) {
+				debug.trace("REQUEST_TYPE_GET_ITEM");
 				String itemKey = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM);
-				debug.trace("itemKey_"+itemKey);
 				greetingService.greetServer("getItemData+"+itemKey,
 						new AsyncCallback<String>() {
 					public void onFailure(Throwable caught) {
@@ -903,8 +975,7 @@ public class KickController {
 					}
 					
 					public void onSuccess(String result) {
-						debug.trace("success!_"+result);
-						procedure("アイテム取得開始");
+//						debug.trace("REQUEST_TYPE_GET_ITEM_success!_"+result);
 					}
 				}
 				);
@@ -914,6 +985,7 @@ public class KickController {
 			 * ユーザーの所持データを取得する(自分のデータを取得し、かつ、誰々がなんか追加しましたというのをブロードキャストする用)
 			 */
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA) != null) {
+				debug.trace("REQUEST_TYPE_UPDATE_MYDATA");
 				String userKeyForCurrent = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
 				greetingService.greetServer("getMyData+"+userKeyForCurrent,
 						new AsyncCallback<String>() {
@@ -922,13 +994,13 @@ public class KickController {
 					}
 					
 					public void onSuccess(String result) {
-						debug.trace("success!_"+result);
-						procedure("アイテム取得開始");
+//						debug.trace("REQUEST_TYPE_UPDATE_MYDATA_success!_"+result);
 					}
 				}
 				);
 			}
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT) != null) {
+				debug.trace("REQUEST_TYPE_ADDCOMMENT");
 				String addCommentObject = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
 				greetingService.greetServer("addCommentData+"+addCommentObject,
 						new AsyncCallback<String>() {
@@ -937,13 +1009,15 @@ public class KickController {
 					}
 					
 					public void onSuccess(String result) {
-						debug.trace("success!_"+result);
-						procedure("アイテム取得開始");
+//						debug.trace("REQUEST_TYPE_ADDCOMMENT_success!_"+result);
 					}
 				}
 				);
 			}
+			
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT) != null) {
+				debug.trace("REQUEST_TYPE_GETALLCOMMENT");
+				
 				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
 				//所持ユーザーと、そのコメントを取得、更新があったら(=この返答があったら)逐一塗り替える。
 				greetingService.greetServer("getAllCommentData+"+itemKeyForGetComment,
@@ -954,13 +1028,14 @@ public class KickController {
 					
 					public void onSuccess(String result) {
 						debug.trace("success!_"+result);
-						procedure("アイテム取得開始");
 					}
 				}
 				);
 			}
 			
 			if (request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT) != null) {
+				debug.trace("REQUEST_TYPE_GET_LATESTCOMMENT");
+				
 				String itemKeyForGetComment = request.get(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT);
 				//所持ユーザーと、そのコメントを取得、更新があったら(=この返答があったら)逐一塗り替える。
 				greetingService.greetServer("getSingleCommentData+"+itemKeyForGetComment,
@@ -971,7 +1046,6 @@ public class KickController {
 					
 					public void onSuccess(String result) {
 						debug.trace("success!_"+result);
-						procedure("アイテム取得開始");
 					}
 				}
 				);
@@ -1002,31 +1076,26 @@ public class KickController {
 			
 			if (root != null) {
 				if (root.get("channelID").isString() != null) {
-					channelID = root.get("channelID").isString();//ここで、前後%22が着いてる。とっちゃえばいい、というものでも無いと思う。取り方がある筈。
-					
+					channelID = root.get("channelID").isString();
 					debug.trace("channelID_"+channelID.stringValue());
 				}
 				
 				if (root.get("userData").isObject() != null) {
 					userData = root.get("userData").isObject();
-					debug.trace("userData_"+userData);
 				}
 			}
 			
 			if (userData != null) {
-				try {
+				if (userData.containsKey("itemKeys")) {
 					if (userData.get("itemKeys").isArray() != null) {
-						debug.trace("userData.get(\"itemKeys\").isArray()_"+userData.get("itemKeys").isArray());
 						userItemArray = userData.get("itemKeys").isArray();
-						debug.trace("size_"+userItemArray.size());
 					}
-				} catch (Exception e) {
-					debug.trace("userData.get(\"itemKeys\").isArray() != nullであれば出ない筈なんだけど_"+e);
 				}
+
 				
 				if (userData.get("key").isObject() != null) {
 					JSONObject key = userData.get("key").isObject();
-					debug.trace("key_"+key);
+//					debug.trace("key_"+key);
 					uStCont.setUserKey(key);
 					
 					int imageNumber = (int)userData.get("imageNumber").isNumber().doubleValue();
@@ -1038,7 +1107,7 @@ public class KickController {
 			/*
 			 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
 			 */
-			debug.trace("status_"+uStCont.getUserStatus());
+//			debug.trace("status_"+uStCont.getUserStatus());
 			debug.trace("name_"+uStCont.getUserName());
 			debug.trace("password_"+uStCont.getUserPass());
 			
@@ -1052,11 +1121,12 @@ public class KickController {
 			}
 			
 			/*
-			 * アイテム取得のリクエストを用意する(ユーザーデータ全体にアイテム所持一覧が含まれている)
+			 * 所持アイテムキーの情報をセットする
 			 */
 			if (userItemArray != null) {
-				setUpUserItemRequest(uStCont.getUserKey(), userItemArray);
+				uStCont.setM_userItemArray(userItemArray);
 			}
+			
 		} catch (Exception e) {
 			debug.trace("エラー隠蔽の可能性がある_"+e);
 		}
@@ -1068,7 +1138,6 @@ public class KickController {
 	 * @param jsonString
 	 */
 	private void setUpUserItemRequest(JSONObject userKey, JSONArray userItemArray) {
-		debug.trace("setUpUserItemRequestに来てる");
 		int size = userItemArray.size();
 		for (int i = 0; i < size; i++) {
 			JSONObject key = new JSONObject();
@@ -1081,76 +1150,7 @@ public class KickController {
 
 	}
 	
-	
-	/**
-	 * JSONの構文分解。
-	 * テストしましょう。
-	 * @param jsonString
-	 * @return 
-	 */
-	public void parseJsonString(String jsonString) {
-		
-		/**
-		 * "{\"channelID\":\"channel-m2fdj8-master\",
-		 * \"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}}";
-//コレも、オブジェクト扱いらしい。
-\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}
-		 */
-		
-		//アイテム一覧のアレイがあるので、取得する
-		if (JSONParser.parseStrict(jsonString).isArray() != null) {
-			debug.trace("アレイがあるみたいです");
-		}
-		if (JSONParser.parseStrict(jsonString).isBoolean() != null) {
-			debug.trace("ブーリアン？");
-		}
-		
-		/**
-		 * うーーん、パース部分が肥大化するよう。しょうがないのかよう。
-		 */
-		if (JSONParser.parseStrict(jsonString).isObject() != null) {
-			debug.trace("オブジェクト？");
-			
-			JSONObject obj = JSONParser.parseStrict(jsonString).isObject();
-			
 
-			
-			JSONValue v = obj.get("channelID");
-			debug.trace("channelID_"+v);
-			
-			if (obj.get("userData").isArray() != null) {
-				debug.trace("配列としてゲット出来るようだ");
-			}
-			if (obj.get("userData").isString() != null) {
-				debug.trace("文字列");
-			}
-			if (obj.get("userData").isObject() != null) {
-				//\"userData\":{\"itemKeys\":[],\"key\":{\"complete\":true,\"id\":0,\"kind\":\"user\",\"name\":\"test@test\",\"namespace\":\"\",\"parent\":null},\"m_userName\":\"test\",\"m_userPass\":\"test\",\"m_userStatus\":0}
-				debug.trace("Objとして");
-				JSONObject obj2 = obj.get("userData").isObject();
-				if (obj2.get("itemKeys").isArray() != null) {
-					debug.trace("[]表記ならば配列らしい");
-					JSONArray a = obj2.get("itemKeys").isArray();
-					debug.trace("size_"+a.size());
-				}
-				if (obj2.get("m_userStatus").isObject() != null) {//値が存在して初めて読める。こう書くしかないのか。
-					debug.trace("オブジェクトだよ");
-					JSONNumber status = obj2.get("m_userStatus").isNumber();
-					debug.trace("status_"+status);
-				}
-			}
-//			JSONArray array = obj.get("userData").isArray();
-//			debug.trace("array_"+array);
-			
-			
-		}
-		if (JSONParser.parseStrict(jsonString).isString() != null) {
-			debug.trace("ストリング？");
-		}
-		debug.trace("チェック完了");
-		
-		
-	}
 
 	/**
 	 * channelAPIが開いたので、ユーザーにキーを返す
@@ -1160,11 +1160,7 @@ public class KickController {
 		/**
 		 * 取得したキーでチャンネルを開く
 		 */
-		String channelIDUTF8String = URL.encode(result);//%22(")がついている。なんとかならないかな。
-		debug.trace("channelIDUTF8String_"+channelIDUTF8String);
-		channelIDUTF8String = channelIDUTF8String.substring(3,channelIDUTF8String.length()-3);
-		
-		Channel channel = ChannelFactory.createChannel(channelIDUTF8String);
+		Channel channel = ChannelFactory.createChannel(result.substring(1,result.length()-1));
 		
 		
 		/**
@@ -1219,11 +1215,11 @@ public class KickController {
 	 * @param name
 	 * @param pass
 	 */
-	public void login(String name, String pass) {
+	public void login(String name, String pass, String loginItemURL) {
 		inputUserName(name);
 		inputUserPass(pass);
 		
-		procedure("loginProcedure");
+		procedure("loginWithURLPath+"+loginItemURL);
 	}
 	
 	/**

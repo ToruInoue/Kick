@@ -27,7 +27,7 @@ public class ScreenEvent extends GwtEvent<ScreenHandler> {
 	 */
 	public ScreenEvent (int num, Widget w) {
 		debug = new Debug(this);
-		debug.trace("ScreenEvent_コンストラクタ");
+//		debug.trace("ScreenEvent_コンストラクタ");
 		setWidget(w);
 		setNum(num);
 	}
@@ -79,17 +79,17 @@ public class ScreenEvent extends GwtEvent<ScreenHandler> {
 	protected void dispatch(ScreenHandler handler) {
 		switch (getNum()) {
 		case 0:
-			debug.trace("dispatch_"+0);
+//			debug.trace("dispatch_"+0);
 //			handler.doProcess(getWidget());
 			break;
 		
 		case 1:
-			debug.trace("dispatch_"+1);//ここで駄目になってるから、handlerの処理か。ということは、受ける側のリセットが無いからか？
+//			debug.trace("dispatch_"+1);//ここで駄目になってるから、handlerの処理か。ということは、受ける側のリセットが無いからか？
 			handler.addToMain(getWidget());
 			break;
 			
 		case 2:
-			debug.trace("dispatch_"+2);
+//			debug.trace("dispatch_"+2);
 			handler.addToSub(getWidget());
 			break;
 			

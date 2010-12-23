@@ -12,19 +12,23 @@ import com.kissaki.client.subFrame.debug.Debug;
  * @author ToruInoue
  *
  */
-public class MyDialogBox extends DialogBox {
+public class MyLoginBox extends DialogBox {
 	Debug debug;
 	final TextBox nameSpace = new TextBox();
 	final TextBox passSpace = new TextBox();
+	
+	String loginItemURL = null;//ログイン時にアイテムが選択されている、そのアイテムのURL(設定済みかどうかは、判らない
+	
+	
 	KickController kCont = null;
 	/**
 	 * コンストラクタ
 	 */
-	public MyDialogBox(KickController kickCont){
+	public MyLoginBox(KickController kickCont, String loginItemURL){
 		debug = new Debug(this);
 		
 		this.kCont = kickCont;
-		
+		this.loginItemURL = loginItemURL;
 		setText("☆Login");
 		
 		VerticalPanel panel = new VerticalPanel();
@@ -89,7 +93,7 @@ public class MyDialogBox extends DialogBox {
 		debug.trace("nameSpace_"+nameSpace);
 		debug.trace("passSpace_"+passSpace);
 			
-		kCont.login(nameSpace.getText(), passSpace.getText());
+		kCont.login(nameSpace.getText(), passSpace.getText(), loginItemURL);
 		this.hide();
 	}
 	

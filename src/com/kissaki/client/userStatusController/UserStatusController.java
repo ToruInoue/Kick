@@ -33,6 +33,11 @@ public class UserStatusController {
 
 	//データモデルのリスト
 	List<ClientSideCurrentItemDataModel> m_iDataModelMap;
+
+	private JSONArray m_userItemArray;//ユーザー情報取得時に所持しているアイテムのキー一覧
+	private String m_loginItemPath;//ログイン時に所持しているアイテムのパス
+
+	private String m_nowFocusingItemAddress;//現在このユーザーがフォーカスしているアイテムのアドレス
 	
 	
 	public final static int STATUS_USER_LOGOUT = -1;
@@ -108,9 +113,7 @@ public class UserStatusController {
 	 */
 	public void addRequestToRequestQueue (String request, String requestTypeGet) {
 		try {
-			debug.trace("request_"+request);
 			m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));
-			debug.trace("request_inserted_"+request);
 		} catch (Exception e) {
 			debug.trace("addRequestToRequestQueue_error"+e);
 		}
@@ -120,13 +123,12 @@ public class UserStatusController {
 	 * リクエストで未実行のものを、Mapとして返す
 	 */
 	public Map<String,String> getExecutableQueuedRequest () {
-		debug.trace("execute_retMap_start");
 		int i = 0;
 		//for (i = 0; i < m_uQueueModelMap.size(); i++) {
 		for (Iterator<ClientSideRequestQueueModel> qIteletor = m_rQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
 			ClientSideRequestQueueModel current = qIteletor.next();//m_uQueueModelMap.get(i);
 			if (current.isNotYet()) {
-				debug.trace("current_"+current);
+				debug.trace("executing__"+current.getLoadingRequestObject());
 				//通信として実行中の状態に設定する
 				current.setLoading();
 				
@@ -221,8 +223,6 @@ public class UserStatusController {
 			
 			JSONObject userKeyWithItemKey = new JSONObject();
 			
-			debug.trace("currentAddress_"+currentObject.toString());
-			
 			userKeyWithItemKey.put("itemKey", currentObject);
 			userKeyWithItemKey.put("userKey", userKey);
 			checkContainsDataURL(userKeyWithItemKey.toString());//比較して存在しなければ、追加する
@@ -238,10 +238,10 @@ public class UserStatusController {
 			try {
 				
 				ClientSideRequestQueueModel currentModel = requestModelItel.next();
-				debug.trace("currentModel_"+currentModel.getM_dataURL());
+//				debug.trace("currentModel_"+currentModel.getM_dataURL());
 				if (currentModel.getM_dataURL().equals(currentAddress)) {//アドレス一致するものがある
 					//アドレス一致する = 含まれている
-					debug.trace("アドレスがすでにQueueに含まれている_"+currentAddress);
+//					debug.trace("アドレスがすでにQueueに含まれている_"+currentAddress);
 					return;//第2層なので、これ以上探す必要が無い
 				}
 				
@@ -277,8 +277,41 @@ public class UserStatusController {
 
 
 	public void setM_imangeNumber(int m_imangeNumber) {
-		debug.trace("セットされてます_"+m_imangeNumber);
 		this.m_imageNumber = m_imangeNumber;
+	}
+
+
+	/**
+	 * ユーザーのアイテムキーのアレイを所持する
+	 * @param userItemArray
+	 */
+	public void setM_userItemArray(JSONArray userItemArray) {
+		this.m_userItemArray = userItemArray;
+	}
+
+
+	public JSONArray getM_userItemArray() {
+		return m_userItemArray;
+	}
+
+
+	
+	public void setM_loginItemPath(String currentItemURLString) {
+		m_loginItemPath = currentItemURLString;
+	}
+
+
+	public String getM_loginItemPath() {
+		return m_loginItemPath;
+	}
+
+
+	public void setM_nowFocusingItemAddress(String nowFocusingItemAddress) {
+		this.m_nowFocusingItemAddress = nowFocusingItemAddress;
+	}
+
+	public String getM_nowFocusingItemAddress() {
+		return m_nowFocusingItemAddress;
 	}
 
 

@@ -45,7 +45,6 @@ public class ClientSideCurrentItemDataModel {
 	public JSONArray getTagArray() {
 		JSONArray array = null;// = new JSONArray();
 		try {
-			debug.trace("元々_"+m_itemdata);
 			if (m_itemdata.get("m_tagList").isArray() != null) {
 				array = m_itemdata.get("m_tagList").isArray();
 			} else {

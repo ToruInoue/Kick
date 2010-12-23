@@ -69,7 +69,7 @@ public class ClientSideRequestQueueModel {
 	}
 
 	public String getM_dataURL() {
-		debug.trace("m_dataURL_"+m_dataURL);
+//		debug.trace("m_dataURL_"+m_dataURL);
 		return m_dataURL;
 	}
 	

@@ -14,7 +14,7 @@ import com.kissaki.client.subFrame.debug.Debug;
 public class TestTextEvent_Entered {
 	Debug debug = null;
 	KickController controller;
-	MyDialogBox dialocController;
+	MyLoginBox dialocController;
 	int myIndex;
 	
 	public TestTextEvent_Entered () {
@@ -144,7 +144,7 @@ public class TestTextEvent_Entered {
 	 * ダイアログからのデリゲート
 	 * @param myDialogBox
 	 */
-	public void setDelegate2(MyDialogBox myDialogBox) {
+	public void setDelegate2(MyLoginBox myDialogBox) {
 		dialocController = myDialogBox;
 	}
 	

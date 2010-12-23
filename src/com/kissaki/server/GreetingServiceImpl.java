@@ -506,11 +506,9 @@ GreetingService {
 	 */
 	private String getCurrentUserDataQualification(String input) {
 		input = input.substring("getMyData+".length(), input.length());
-		debug.trace("getMyData__"+input);
 		
 		
 		Key userKey = null;
-		String myCurrentJsonData = null;
 		String myUserName = null; 
 		try {
 			userKey = gson.fromJson(input, Key.class);
@@ -732,13 +730,11 @@ GreetingService {
 			 * このユーザーキーで、アイテムを登録する。
 			 */
 			String itemAddressWithUserKey = input.substring("setItemData+".length(), input.length());
-			debug.trace("itemAddressWithUserKey_"+itemAddressWithUserKey);
-
+			
 			jsonDatas = new JSONObject(itemAddressWithUserKey);
 			userKeyObject = jsonDatas.getJSONObject("userKey");
 			userName = userKeyObject.getString("name");
-			debug.trace("userName_"+userName);
-
+			
 			myUserModel = getUserModelFromKeyName(userName);
 		} catch (Exception e) {
 			debug.trace("parse_error_"+e);
@@ -779,7 +775,7 @@ GreetingService {
 			List<Key> ownerList = currentItemDataModel.getM_ownerList();
 			
 			if (ownerList.contains(myUserModel.getKey())) {
-				debug.trace("すでにこのアイテムは所持されているby_"+myUserModel.getKey());
+//				debug.trace("すでにこのアイテムは所持されているby_"+myUserModel.getKey());
 				
 				Map<String, Object> channelMap_ITEM_ALREADY_OWN = new HashMap<String, Object>();
 				
@@ -1004,7 +1000,6 @@ GreetingService {
 					map.put("channelID",channelKey);
 					String s = gson.toJson(map);
 					
-					debug.trace("s_"+s);
 					ret = s;
 					return ret;
 				} else {

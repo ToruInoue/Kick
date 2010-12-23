@@ -28,7 +28,7 @@ public class PanelComposite_Simple extends Composite implements ScreenInterface 
 	}
 	
 	public void setToMainPanel (Widget w) {
-		debug.trace("simplePanel_"+simplePanel);
+//		debug.trace("simplePanel_"+simplePanel);
 		simplePanel.add(w);
 	}
 	

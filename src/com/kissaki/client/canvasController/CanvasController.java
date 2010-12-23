@@ -103,7 +103,6 @@ public class CanvasController {
 			
 			updateCanvas(10,10);
 			
-			debug.trace("アップデートがかかっている");
 			//p.image("http://a0.twimg.com/images/dev/bookmark.png", ""+100, ""+100, ""+100, ""+100);
 			
 			
