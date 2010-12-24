@@ -51,6 +51,8 @@ public class UserStatusController {
 		debug = new Debug(this);
 		m_rQueueModelMap = new ArrayList<ClientSideRequestQueueModel>();
 		m_iDataModelMap = new ArrayList<ClientSideCurrentItemDataModel>();
+		
+		m_userItemArray = new JSONArray();
 	}
 	
 	
@@ -247,9 +249,7 @@ public class UserStatusController {
 				
 				if (!requestModelItel.hasNext()) {
 					//address = address.substring(1,currentAddress_.length()-1);
-					debug.trace("含まれていないので追加する_アドレスしか追加していないので、注意。"+currentAddress);
-					
-					addRequestToRequestQueue(currentAddress, ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM);
+					addRequestToRequestQueue(currentAddress, ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_KEY);
 					return;
 				}
 			} catch (Exception e) {

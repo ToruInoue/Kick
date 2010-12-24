@@ -23,8 +23,9 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_GET_TAG_FROM_ITEM = "GET_TAG_BY_ITEM";
 	public final static String REQUEST_TYPE_GET_TAG_FROM_PERSON = "GET_TAG_BY_YOU";
 	public final static String REQUEST_TYPE_ADDNEWTAG = "ADD_TAG";
-	public final static String REQUEST_TYPE_ADD = "ADD_ITEM";
-	public final static String REQUEST_TYPE_GET_ITEM = "GET_ITEM";
+	public final static String REQUEST_TYPE_ADD_ITEM = "ADD_ITEM";
+	public final static String REQUEST_TYPE_GET_ITEM_FROM_KEY = "GET_ITEM_FROM_KEY";
+	public final static String REQUEST_TYPE_GET_ITEM_FROM_ADDRESS = "GET_ITEN_FROM_ADDRESS";
 	public final static String REQUEST_TYPE_UPDATE_MYDATA = "MY_CURRENT";
 	
 	public final static String REQUEST_TYPE_GETALLCOMMENT = "GET_ALLCOMMENT";

@@ -29,7 +29,8 @@ public class MyLoginBox extends DialogBox {
 		
 		this.kCont = kickCont;
 		this.loginItemURL = loginItemURL;
-		setText("☆Login");
+		
+		setText("☆Login_"+loginItemURL);
 		
 		VerticalPanel panel = new VerticalPanel();
 		
@@ -92,8 +93,8 @@ public class MyLoginBox extends DialogBox {
 		//
 		debug.trace("nameSpace_"+nameSpace);
 		debug.trace("passSpace_"+passSpace);
-			
-		kCont.login(nameSpace.getText(), passSpace.getText(), loginItemURL);
+		
+		kCont.login(nameSpace.getText(), passSpace.getText());
 		this.hide();
 	}
 	

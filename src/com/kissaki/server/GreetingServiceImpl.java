@@ -87,9 +87,13 @@ GreetingService {
 		if (input.startsWith("getMyData+")) {
 			return getCurrentUserDataQualification(input);
 		}
-
+		
+		if (input.startsWith("getItemDataFromAddress+")) {
+			return getItemFromAddressQualification(input);
+		}
+		
 		if (input.startsWith("getItemData+")) {
-			return getItemQualification(input);
+			return getItemFromKeyQualification(input);
 		}
 		
 		if (input.startsWith("setItemData+")) {
@@ -113,6 +117,63 @@ GreetingService {
 		}
 		
 		return "default";//HTTP_OKキーを返せばいい
+	}
+
+
+	/**
+	 * 合致するアドレスのアイテムを探す
+	 * @param input
+	 * @return
+	 */
+	private String getItemFromAddressQualification(String input) {
+		String userKeyWithAddress = input.substring("getItemDataFromAddress+".length(),input.length());
+		
+		
+		debug.trace("userKeyWithAddress_"+userKeyWithAddress);
+		JSONObject userKeyWithAddressObject;
+		String userName = null;
+		String itemAddress = null;
+		try {
+			userKeyWithAddressObject = new JSONObject(userKeyWithAddress);
+		
+			JSONObject userKeyObject = userKeyWithAddressObject.getJSONObject("userKey");
+			userName = userKeyObject.getString("name");
+			
+			itemAddress = userKeyWithAddressObject.getString("itemAddressAsIdentifier");
+			
+		} catch (JSONException e) {
+			debug.trace("getItemFromAddressQualifi_error_"+e);
+		}
+		
+		debug.assertTrue(userName != null, "userNameがnull");
+		
+		
+		//この値がユーザーの所持物に入っている場合のみ、返答する。　ここからの所持は、、やろうと思えば出来るのか。あーー、、うーん、、
+		UserDataModel currentUserDataModel = getUserModelFromKeyName(userName);
+		ItemDataModel currentItem = null;
+		if (currentUserDataModel != null) {
+			//ユーザー所持のアイテムから探す
+			
+			currentItem = getItemDataModelFromItemName(itemAddress);
+			debug.trace("currentItem_"+currentItem);
+			
+		}
+		
+		if (currentItem  != null) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			
+			map.put("requested", currentItem);//どかっと置いてOKなのか
+			map.put("command", "ITEM_FOUND");//アイテムのデータを更新するきっかけにする。
+			map.put("userInfo", currentUserDataModel.getKey());
+			
+			
+			String currentCommentData = gson.toJson(map);
+			channel.sendMessage(channelId, currentCommentData);
+		}
+		
+		
+		
+		return "ok";
 	}
 
 
@@ -732,6 +793,7 @@ GreetingService {
 			String itemAddressWithUserKey = input.substring("setItemData+".length(), input.length());
 			
 			jsonDatas = new JSONObject(itemAddressWithUserKey);
+			
 			userKeyObject = jsonDatas.getJSONObject("userKey");
 			userName = userKeyObject.getString("name");
 			
@@ -848,7 +910,8 @@ GreetingService {
 				
 			channel.sendMessage(channelId, channelString_ALREADY_ADDED_TO_USER);
 		} else {
-			myUserModel.getItemKeys().add(currentItemkey);//アイテムの情報を追加(おそらくすでに存在する場合とか、ありえそうだ。新規作成時しかここにこないから平気だと思うが。)
+			debug.trace("セットしたので通知");
+			myUserModel.getItemKeys().add(currentItemkey);//TODO アイテムの情報を追加(おそらくすでに存在する場合とか、ありえそうだ。新規作成時しかここにこないから平気だと思うが、チェックしておくべき。
 			Datastore.put(myUserModel);
 			
 			Map<String, Object> map = new HashMap<String, Object>();
@@ -893,7 +956,7 @@ GreetingService {
 	 * @param input
 	 * @return
 	 */
-	private String getItemQualification(String input) {
+	private String getItemFromKeyQualification(String input) {
 		//JSONからKeyを取得する。
 		String keySource = input.substring("getItemData+".length(), input.length());
 		debug.trace("keySource_"+keySource);
@@ -921,6 +984,7 @@ GreetingService {
 		} catch (Exception e) {
 			debug.trace("getItemQualif_parse"+e);
 		}
+		
 		
 		Map<String,Object> map = new HashMap<String,Object>();
 		map.put("command", "PUSH_ITEM");
