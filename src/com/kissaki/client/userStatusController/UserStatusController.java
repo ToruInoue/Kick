@@ -35,10 +35,10 @@ public class UserStatusController {
 	List<ClientSideCurrentItemDataModel> m_iDataModelMap;
 
 	private JSONArray m_userItemArray;//ユーザー情報取得時に所持しているアイテムのキー一覧
-	private String m_loginItemPath;//ログイン時に所持しているアイテムのパス
-
-	private String m_nowFocusingItemAddress;//現在このユーザーがフォーカスしているアイテムのアドレス
 	
+	private String m_loginItemPath;//ログイン時に所持しているアイテムのパス
+	private String m_nowFocusingItemAddress;//現在このユーザーがフォーカスしているアイテムのアドレス
+	private JSONObject m_nowFocusingItemKey;//現在フォーカスしているアイテムのKey
 	
 	public final static int STATUS_USER_LOGOUT = -1;
 	public final static int STATUS_USER_LOGGING = 0;
@@ -114,6 +114,9 @@ public class UserStatusController {
 	 * @param request
 	 */
 	public void addRequestToRequestQueue (String request, String requestTypeGet) {
+		
+		//TODO　すでにリクエストが存在している場合、という考慮がないので、あんまり使えない。
+		
 		try {
 			m_rQueueModelMap.add(new ClientSideRequestQueueModel(request, requestTypeGet));
 		} catch (Exception e) {
@@ -215,7 +218,7 @@ public class UserStatusController {
 	 * レイヤー状の処理が楽しい。
 	 * @param owningItemKeyArray
 	 */
-	public void compareToCurrentRequest(JSONObject userKey, JSONArray owningItemKeyArray) {
+	public void compareToCurrentAndAddToRequest(JSONObject userKey, JSONArray owningItemKeyArray) {
 		//名前と合致するか確認し、合致するものが無ければ新規取得が必要なものとしてセットする。
 		//{"kind":"item", "id":0, "name":"http://a"}
 		for (int i = 0; i < owningItemKeyArray.size(); i++) {
@@ -227,7 +230,7 @@ public class UserStatusController {
 			
 			userKeyWithItemKey.put("itemKey", currentObject);
 			userKeyWithItemKey.put("userKey", userKey);
-			checkContainsDataURL(userKeyWithItemKey.toString());//比較して存在しなければ、追加する
+			checkContainsDataURL(userKeyWithItemKey.toString());//比較して存在しなければ、キューに追加する
 		}
 	}
 	
@@ -290,7 +293,7 @@ public class UserStatusController {
 	}
 
 
-	public JSONArray getM_userItemArray() {
+	public JSONArray getM_userOwningItemArray() {
 		return m_userItemArray;
 	}
 
@@ -313,8 +316,19 @@ public class UserStatusController {
 	public String getM_nowFocusingItemAddress() {
 		return m_nowFocusingItemAddress;
 	}
+	
+	
+	/**
+	 * 現在ユーザーがフォーカスしているアイテムのキー
+	 * @return
+	 */
+	public JSONObject getM_nowFocusingItemKey () {
+		return m_nowFocusingItemKey;
+	}
 
-
+	public void setM_nowFocusingItemKey (JSONObject key) {
+		m_nowFocusingItemKey = key;
+	}
 
 
 

@@ -17,6 +17,7 @@ import quicktime.std.movies.media.UserData;
 
 import com.kissaki.client.GreetingService;
 import com.kissaki.client.subFrame.debug.Debug;
+import com.kissaki.client.userStatusController.userDataModel.ClientSideRequestQueueModel;
 import com.kissaki.server.commentDataModel.CommentDataModel;
 import com.kissaki.server.commentDataModel.CommentDataModelMeta;
 import com.kissaki.server.itemDataModel.ItemDataModel;
@@ -84,11 +85,11 @@ GreetingService {
 			return loginQualification(input);
 		}
 
-		if (input.startsWith("getMyData+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA)) {
 			return getCurrentUserDataQualification(input);
 		}
 		
-		if (input.startsWith("getItemDataFromAddress+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_ADDRESS)) {
 			return getItemFromAddressQualification(input);
 		}
 		
@@ -96,8 +97,8 @@ GreetingService {
 			return getItemFromKeyQualification(input);
 		}
 		
-		if (input.startsWith("setItemData+")) {
-			return setItemQualification(input);
+		if (input.startsWith("addItemData+")) {
+			return addItemQualification(input);
 		}
 		
 		if (input.startsWith("addTagToItemData+")) {
@@ -126,7 +127,7 @@ GreetingService {
 	 * @return
 	 */
 	private String getItemFromAddressQualification(String input) {
-		String userKeyWithAddress = input.substring("getItemDataFromAddress+".length(),input.length());
+		String userKeyWithAddress = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_ADDRESS.length(),input.length());
 		
 		
 		debug.trace("userKeyWithAddress_"+userKeyWithAddress);
@@ -162,13 +163,19 @@ GreetingService {
 		if (currentItem  != null) {
 			Map<String, Object> map = new HashMap<String, Object>();
 			
-			map.put("requested", currentItem);//どかっと置いてOKなのか
+			map.put("requestedItem", currentItem);
 			map.put("command", "ITEM_FOUND");//アイテムのデータを更新するきっかけにする。
 			map.put("userInfo", currentUserDataModel.getKey());
 			
 			
 			String currentCommentData = gson.toJson(map);
 			channel.sendMessage(channelId, currentCommentData);
+			
+			
+			
+		} else {
+			debug.trace("持ってないっす");
+			
 		}
 		
 		
@@ -566,7 +573,7 @@ GreetingService {
 	 * @return
 	 */
 	private String getCurrentUserDataQualification(String input) {
-		input = input.substring("getMyData+".length(), input.length());
+		input = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA.length(), input.length());
 		
 		
 		Key userKey = null;
@@ -578,6 +585,7 @@ GreetingService {
 			debug.trace("getCurrentUserDataQualification_gson_parse_"+e);	
 		}
 		
+		//ユーザーのアイテムのキーだけ特に送る
 		UserDataModel myUserData = getUserModelFromKeyName(myUserName);
 		
 		Map<String, Object> map = new HashMap<String, Object>();
@@ -585,9 +593,20 @@ GreetingService {
 		map.put("userOwnItems", myUserData.getItemKeys());
 		map.put("userInfo", myUserData.getKey());
 		
-		String currentUserDataString = gson.toJson(map);
+		String currentUserItemDatasString = gson.toJson(map);
+		
+		channel.sendMessage(channelId, currentUserItemDatasString);
+		
+		//ユーザーの情報を送る
+		Map<String, Object> userMap = new HashMap<String, Object>();
+		userMap.put("command", ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
+		userMap.put("userData", myUserData);
+		userMap.put("userInfo", myUserData.getKey());
+		
+		String currentUserDataString = gson.toJson(userMap);
 		
 		channel.sendMessage(channelId, currentUserDataString);
+		
 		
 		return "ok";
 	}
@@ -781,7 +800,7 @@ GreetingService {
 	 * @param input
 	 * @return
 	 */
-	private String setItemQualification(String input) {
+	private String addItemQualification(String input) {
 		JSONObject jsonDatas = null;
 		JSONObject userKeyObject = null;
 		String userName = null;
@@ -790,7 +809,7 @@ GreetingService {
 			/*
 			 * このユーザーキーで、アイテムを登録する。
 			 */
-			String itemAddressWithUserKey = input.substring("setItemData+".length(), input.length());
+			String itemAddressWithUserKey = input.substring("addItemData+".length(), input.length());
 			
 			jsonDatas = new JSONObject(itemAddressWithUserKey);
 			
@@ -843,6 +862,7 @@ GreetingService {
 				
 				channelMap_ITEM_ALREADY_OWN.put("command", "ITEM_ALREADY_OWN");
 				channelMap_ITEM_ALREADY_OWN.put("itemAddressKey", itemAddressKey);
+				channelMap_ITEM_ALREADY_OWN.put("requestedItemKey", currentItemDataModel.getKey());
 				channelMap_ITEM_ALREADY_OWN.put("userInfo", myUserModel.getKey());
 				
 
@@ -856,7 +876,8 @@ GreetingService {
 				
 				Map<String, Object> channelMap_ITEM_OWNER_ADDED = new HashMap<String, Object>();
 				channelMap_ITEM_OWNER_ADDED.put("command", "ITEM_OWNER_ADDED");
-				channelMap_ITEM_OWNER_ADDED.put("value", itemAddressKey);
+				channelMap_ITEM_OWNER_ADDED.put("joinedAsNewOwner", currentItemDataModel);
+				channelMap_ITEM_OWNER_ADDED.put("userInfo", myUserModel.getKey());
 				
 				String channelString_ITEM_OWNER_ADDED = gson.toJson(channelMap_ITEM_OWNER_ADDED);
 				
@@ -910,7 +931,6 @@ GreetingService {
 				
 			channel.sendMessage(channelId, channelString_ALREADY_ADDED_TO_USER);
 		} else {
-			debug.trace("セットしたので通知");
 			myUserModel.getItemKeys().add(currentItemkey);//TODO アイテムの情報を追加(おそらくすでに存在する場合とか、ありえそうだ。新規作成時しかここにこないから平気だと思うが、チェックしておくべき。
 			Datastore.put(myUserModel);
 			
@@ -959,7 +979,7 @@ GreetingService {
 	private String getItemFromKeyQualification(String input) {
 		//JSONからKeyを取得する。
 		String keySource = input.substring("getItemData+".length(), input.length());
-		debug.trace("keySource_"+keySource);
+		debug.trace("getItemFromKeyQualification_keySource_"+keySource);
 		JSONObject rootObject = null;
 		
 		//照会用の自分の名称
