@@ -26,6 +26,8 @@ import com.kissaki.client.subFrame.debug.Debug;
 public class CommentDialogBox extends PopupPanel {
 	Debug debug;
 	
+	static final int INTERFACE_NUMBER_ENTER = 13;
+	
 	private KickController kCont;
 	
 	final JSONObject m_masterUserKey;
@@ -50,7 +52,16 @@ public class CommentDialogBox extends PopupPanel {
 	public CommentDialogBox (final KickController kickCont, JSONObject itemKey, JSONObject masterUserKey, Image userImage, int mode, String comment) {
 		debug = new Debug(this);
 		
+		debug.assertTrue(kickCont != null, "kickContがnull");
+		debug.assertTrue(itemKey != null, "itemKeyがnull");
+		debug.assertTrue(masterUserKey != null, "masterUserKeyがnull");
+		debug.assertTrue(userImage != null, "userImageがnull");
+		debug.assertTrue(comment != null, "commentがnull");
+		
+		
+		
 		this.kCont = kickCont;
+		
 		this.m_itemKey = itemKey;
 		this.m_masterUserKey = masterUserKey;
 		this.m_userImage = userImage;
@@ -80,7 +91,7 @@ public class CommentDialogBox extends PopupPanel {
 		commentWindow.addKeyDownHandler(new KeyDownHandler() {
 			@Override
 			public void onKeyDown(KeyDownEvent event) {
-				if (event.getNativeKeyCode() == 13) {
+				if (event.getNativeKeyCode() == INTERFACE_NUMBER_ENTER) {
 					//フォーカスを外す
 					commentWindow.setFocus(false);
 					

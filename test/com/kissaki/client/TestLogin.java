@@ -22,7 +22,7 @@ import com.kissaki.client.subFrame.debug.Debug;
  *
  */
 public class TestLogin 
-//extends GWTTestCase 
+//extends GWTTestCase //ゼロベースで書いてみるしかないね。
 {
 	Debug debug;
 //	KickController kCont;

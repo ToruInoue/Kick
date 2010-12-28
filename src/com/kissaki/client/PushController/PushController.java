@@ -60,6 +60,7 @@ public class PushController {
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
 		
+		
 		if (commandString.contains("CURRENT_USER_DATA")) {
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
 				debug.trace("最新のUserDataを取得_"+root);
@@ -84,7 +85,9 @@ public class PushController {
 				
 				//一件も存在しないので、自分のpopを出す
 				kCont.procedure("NoComment+"+commandString);
-				return;
+			} else {
+				debug.trace("他人で、コメントデータが無いやつが来た_"+kCont.getUserNameFromUserKey(root));
+//				kCont.procedure("SomeoneNoComment+"+commandString);
 			}
 		}
 		
@@ -101,7 +104,8 @@ public class PushController {
 				debug.trace("NO_MY_DATA_このアイテムに関しての自分のコメントデータが無い_"+commandString);
 				kCont.procedure("NoComment+"+commandString);
 			} else {
-				debug.trace("NO_MY_DATA_このアイテムに関してのとある人自身のコメントデータが無い_"+commandString);
+				debug.trace("NO_MY_DATA_このアイテムに関してのとある人自身のコメントデータが無いというイベントが他人のところで発生した_"+commandString);
+//				kCont.procedure("SomeoneNoComment+"+commandString);
 			}
 		}
 
@@ -112,6 +116,15 @@ public class PushController {
 				kCont.procedure("CommentSaved+"+itemKey);
 			} else {
 				debug.trace("他人のコメントデータが保存出来た");
+			}
+		}
+		/**
+		 * 
+		 */
+		if (commandString.contains(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
+			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
+				debug.trace("リクエストしたアイテムについて、タグのシャワーが降り注ぐ_"+root);
+				kCont.procedure(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG+root);
 			}
 		}
 		
@@ -165,15 +178,11 @@ public class PushController {
 			}
 		}
 		
-		if (commandString.contains("TAG_CREATED")) {
+		if (commandString.contains(ClientSideRequestQueueModel.EVENT_TAG_CREATED)) {
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
 				debug.trace("TAG_CREATEDが発生_"+commandString);
 				//自分の持ってるアイテムのどれかにタグが足された筈ですが、pushで帰ってきます。口を開けて待ってなさい。
-				
-				//TODO タグリクエストの完了
-				
-				//kCont.getUStCont().completeRequest(itemKeyNameString);//完了にする そのほか、アップデートを押し付けることが出来る!!
-				kCont.procedure("tagUpdated+"+root);
+				kCont.procedure(ClientSideRequestQueueModel.EVENT_TAG_CREATED+root);
 			} else {
 				debug.trace("他人のタグがアップデートされた_"+kCont.getUserNameFromUserKey(root));
 			}
@@ -182,10 +191,21 @@ public class PushController {
 		if (commandString.contains("ITEM_ADDED_TO_USER")) {
 			
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
-				value = root.get("currentItemkey").isString();
-				kCont.procedure("ItemUpdated+"+value);
+				debug.trace("root_"+root);
+				kCont.procedure("ITEM_ADDED_TO_USER_ItemUpdated+"+root);
 			} else {
 				debug.trace("別のユーザーのアイテムが別のユーザーに加算された_"+kCont.getUserNameFromUserKey(root));
+			}	
+		}
+		
+		/*
+		 * 特定のアイテムに対して、ユーザーの名前がついているタグをサーバから受け取った
+		 */
+		if (commandString.contains(ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED)) {
+			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
+				kCont.procedure(ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED+root);
+			} else {
+				debug.trace("別のユーザーが特定のアイテムに対して、そのユーザーの名前がついているタグをサーバから受け取った_"+kCont.getUserNameFromUserKey(root));
 			}	
 		}
 		
@@ -210,6 +230,17 @@ public class PushController {
 //				debug.trace("For myself from someone");
 			}
 		}
+		
+		/*
+		 * コメント取得の受付完了サインの受け取りが発生
+		 */
+		if (commandString.contains("GETCOMMENT_ACCEPTED")) {
+			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
+				kCont.procedure("GETCOMMENT_ACCEPTED"+root);
+				
+			}
+		}
+		
 		
 		if (commandString.contains("TAG_ALREADY_OWN")) {
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
@@ -259,11 +290,10 @@ public class PushController {
 		 */
 		if (commandString.contains(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA)) {
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
-//				debug.trace("CURRENT_ITEM_DATA_root_"+root);
+				debug.trace("CURRENT_ITEM_DATA_root_"+root);
 				
-				JSONObject userData = root.get("userData").isObject();
 				
-				kCont.procedure(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA+userData.toString());
+				kCont.procedure(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA+root);
 			}	
 		}
 		

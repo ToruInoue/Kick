@@ -90,7 +90,7 @@ public class CanvasController {
 	 * アイテム情報の描画を行う
 	 * @param item
 	 */
-	public void updateItemcInfo(JSONArray currentItemChacheList) {
+	public void updateItemInfo(JSONArray currentItemChacheList, JSONArray currentTagList) {
 		
 		
 		int i = 0;
@@ -98,7 +98,7 @@ public class CanvasController {
 
 		for (i = 0; i < currentItemChacheList.size(); i++) {
 			JSONObject currentModel = currentItemChacheList.get(i).isObject();
-			ClientSideCurrentItemDataModel currentModelReplica = new ClientSideCurrentItemDataModel(currentModel);//すげえw　戻ったw
+			ClientSideCurrentItemDataModel currentModelReplica = new ClientSideCurrentItemDataModel(currentModel);
 			//今回は書く物が一つだけだからOKだが、さて。実際は、ここでずいぶん書き換えが出来る筈。
 			
 			updateCanvas(10,10);
@@ -106,7 +106,6 @@ public class CanvasController {
 			//p.image("http://a0.twimg.com/images/dev/bookmark.png", ""+100, ""+100, ""+100, ""+100);
 			
 			
-			//TODO アイテムが一個しかないから出来る芸当 本来は別管理にしないと行けない筈。
 			if (!itemDialogBoxList.isEmpty()) {
 				//このアイテムに関連する物を全て吹っ飛ばす
 				int size = itemDialogBoxList.size();
@@ -117,12 +116,34 @@ public class CanvasController {
 				}
 			}
 			
-			ItemDialogBox itemDialog = new ItemDialogBox(kCont, userKey, currentModelReplica, 100,100);
+			/*
+			 * ここで、タグのarrayを与える
+			 */
+			JSONArray currentMyTagList = null;
+			if (currentTagList != null) { 
+				if (i < currentTagList.size()) {//範囲内であれば
+					currentMyTagList = currentTagList.get(i).isArray();//２つになった時、そのどちらかにタグが無かったらnullになる。
+				}
+			}
+			
+			ItemDialogBox itemDialog = new ItemDialogBox(kCont, userKey, currentModelReplica, currentMyTagList, 90+90*(i%4),10+(90*(i/4)));
 			itemDialogBoxList.add(itemDialog);
 		}
 	}
 
 
+	public void showUserTag() {
+		for (Iterator<ItemDialogBox> currentItemDialogBoxItel = itemDialogBoxList.iterator(); currentItemDialogBoxItel.hasNext();) {
+			ItemDialogBox currentItemDialogBox = currentItemDialogBoxItel.next();
+			currentItemDialogBox.changeViewMode(true);
+		}
+	}
+	public void hideUserTag() {
+		for (Iterator<ItemDialogBox> currentItemDialogBoxItel = itemDialogBoxList.iterator(); currentItemDialogBoxItel.hasNext();) {
+			ItemDialogBox currentItemDialogBox = currentItemDialogBoxItel.next();
+			currentItemDialogBox.changeViewMode(false);
+		}
+	}
 	
 
 }

@@ -5,6 +5,7 @@ import java.util.Map;
 
 
 import com.kissaki.client.subFrame.debug.Debug;
+import com.kissaki.client.uuidGenerator.UUID;
 
 /**
  * このクライアントで、現在ユーザーが持っている通信を保持するキュー
@@ -23,6 +24,7 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_GET_TAG_FROM_ITEM = "GET_TAG_BY_ITEM";
 	public final static String REQUEST_TYPE_GET_TAG_FROM_PERSON = "GET_TAG_BY_YOU";
 	public final static String REQUEST_TYPE_ADDNEWTAG = "ADD_TAG";
+	public final static String REQUEST_TYPE_UPDATE_TAG = "UPDATE_TAG";
 	public final static String REQUEST_TYPE_ADD_ITEM = "ADD_ITEM";
 	public final static String REQUEST_TYPE_GET_ITEM_FROM_KEY = "GET_ITEM_FROM_KEY";
 	public final static String REQUEST_TYPE_GET_ITEM_FROM_ADDRESS = "GET_ITEN_FROM_ADDRESS";
@@ -30,12 +32,22 @@ public class ClientSideRequestQueueModel {
 	
 	public final static String REQUEST_TYPE_GETALLCOMMENT = "GET_ALLCOMMENT";
 	public final static String REQUEST_TYPE_GET_LATESTCOMMENT = "GET_LATESTCOMMENT";
-	public final static String REQUEST_TYPE_ADDCOMMENT = "ADD_COMMENT";  
+	public final static String REQUEST_TYPE_ADDCOMMENT = "ADD_COMMENT";
+	public final static String REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG = "GET_USER_INDIVIDUAL_TAG";
+	
+	
+	
+	public final static String EVENT_TAG_CREATED = "tag_created";
+	public final static String EVENT_USER_TAG_RECEIVED = "user_tag_received";
+	
+	public final static String KEY_STRING_TRIGGER_ID = "trigger_id";
+	
 	
 
 	Debug debug;
 	
 	final String m_dataURL;
+	final String m_id;
 	private int m_status;
 	private final String m_requestType;
 	
@@ -44,6 +56,8 @@ public class ClientSideRequestQueueModel {
 		
 		this.m_dataURL = m_dataURL;
 		this.m_requestType = requestTypeGet;
+		
+		this.m_id = UUID.uuid(8,16);
 		
 		setM_status(REQUEST_STATUS_YET);
 	}
@@ -89,7 +103,23 @@ public class ClientSideRequestQueueModel {
 	public Map<String,String> getLoadingRequestObject() {
 		Map<String,String> ret = new HashMap<String,String>();
 		ret.put(getM_requestType(), getLoadingRequest());
+		ret.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, getM_id());
 		return ret;
+	}
+
+	public String getM_id() {
+		return m_id;
+	}
+
+	/**
+	 * 終了状態の判断をおこなう
+	 * @return
+	 */
+	public boolean isFinished() {
+		if (getM_status() == REQUEST_STATUS_LOADED) {
+			return true;
+		}
+		return false;
 	}
 
 }

@@ -85,6 +85,9 @@ GreetingService {
 			return loginQualification(input);
 		}
 
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_TAG)) {
+			return updateTagQualification(input);
+		}
 		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA)) {
 			return getCurrentUserDataQualification(input);
 		}
@@ -93,7 +96,7 @@ GreetingService {
 			return getItemFromAddressQualification(input);
 		}
 		
-		if (input.startsWith("getItemData+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_KEY)) {
 			return getItemFromKeyQualification(input);
 		}
 		
@@ -104,21 +107,91 @@ GreetingService {
 		if (input.startsWith("addTagToItemData+")) {
 			return addTagToItemQualification(input);
 		}
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
+			return getItemTagByUserQualification(input);
+		}
 		
-		if (input.startsWith("addCommentData+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT)) {
 			return addCommentQualification(input);
 		}
 		
-		if (input.startsWith("getAllCommentData+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT)) {
 			return getAllCommentQualification(input);
 		}
 		
-		if (input.startsWith("getSingleCommentData+")) {
+		if (input.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT)) {
 			return getLatestCommentQualification(input);
 		}
 		
 		return "default";//HTTP_OKキーを返せばいい
 	}
+
+	/**
+	 * タグのアップデートを行う
+	 * @param input
+	 * @return
+	 */
+	private String updateTagQualification(String input) {
+		String updateKey = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_TAG.length(), input.length());
+		/*
+		 * タグの情報に、ユーザー情報を追加
+		 */
+		debug.trace("updateKey_"+updateKey);
+		
+		JSONObject rootObject = null;
+		String triggerID = null;
+		String userName = null;
+		String itemName = null;
+		String tagName = null;
+		try {
+			rootObject = new JSONObject(updateKey);
+			
+			JSONObject userObject = rootObject.getJSONObject("userKey");
+			userName = userObject.getString("name");
+
+			JSONObject itemObject = rootObject.getJSONObject("itemKey");
+			itemName = itemObject.getString("name");
+			
+			JSONObject tagObject = rootObject.getJSONObject("tagObject");//キーだけ送ってる奴が有る
+			tagName = tagObject.getJSONObject("key").getString("name");
+			
+			
+			triggerID = rootObject.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
+		} catch (JSONException e) {
+			debug.trace("REQUEST_TYPE_UPDATE_TAG_parseError_"+e);
+		}
+		
+		UserDataModel currentUserDataModel = getUserModelFromKeyName(userName);
+		ItemDataModel currentItemDataModel = getItemDataModelFromItemName(itemName);
+		
+		if (tagName != null) {
+			TagDataModel currentTagDataModel = getTagDataModelFromName(tagName);
+			debug.trace("currentTagDataModel_"+currentTagDataModel);
+			if (currentTagDataModel.getM_tagOwnerItemList().contains(currentUserDataModel.getKey())) {
+				debug.trace("すでに含んでいる");
+			} else {
+				currentTagDataModel.getM_tagOwnerItemList().add(currentUserDataModel.getKey());
+				Datastore.put(currentTagDataModel);
+				debug.trace("新しく追加した");//一回ココ、通っているんだよね。うーん。
+				
+				Map<String,Object> tagMap = new HashMap<String,Object>();
+				tagMap.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+				tagMap.put("itemName", currentItemDataModel.getKey().getName());
+				tagMap.put("tagObject", currentTagDataModel);
+				tagMap.put("userInfo", currentUserDataModel.getKey());
+				tagMap.put("command", ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED);
+				
+				
+				String itemNameWithMyTag = gson.toJson(tagMap);
+				
+				channel.sendMessage(channelId, itemNameWithMyTag);
+			}
+		}
+		return "ok";
+	}
+
+
+	
 
 
 	/**
@@ -134,6 +207,7 @@ GreetingService {
 		JSONObject userKeyWithAddressObject;
 		String userName = null;
 		String itemAddress = null;
+		String triggerID = null;
 		try {
 			userKeyWithAddressObject = new JSONObject(userKeyWithAddress);
 		
@@ -142,6 +216,7 @@ GreetingService {
 			
 			itemAddress = userKeyWithAddressObject.getString("itemAddressAsIdentifier");
 			
+			triggerID = userKeyWithAddressObject.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 		} catch (JSONException e) {
 			debug.trace("getItemFromAddressQualifi_error_"+e);
 		}
@@ -166,6 +241,7 @@ GreetingService {
 			map.put("requestedItem", currentItem);
 			map.put("command", "ITEM_FOUND");//アイテムのデータを更新するきっかけにする。
 			map.put("userInfo", currentUserDataModel.getKey());
+			map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 			
 			
 			String currentCommentData = gson.toJson(map);
@@ -190,7 +266,7 @@ GreetingService {
 	 * @return
 	 */
 	private String addCommentQualification(String input) {
-		String itemKeyStringOrigin = input.substring("addCommentData+".length(), input.length());
+		String itemKeyStringOrigin = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT.length(), input.length());
 		debug.trace("addCommentQualification_itemKeyString_"+itemKeyStringOrigin);
 		
 		/*
@@ -260,7 +336,6 @@ GreetingService {
 			
 			commentKey = Datastore.createKey(CommentDataModel.class, commentKeyList.size()+1);
 			//あるかないか、確認出来るが。
-			debug.trace("ここまでは来れる筈_"+commentString+"_"+commentKey);
 		}
 		
 		CommentDataModel currentCommentDataModel = null;
@@ -302,14 +377,15 @@ GreetingService {
 	 * @return
 	 */
 	private String getAllCommentQualification(String input) {
-		String itemKeyString = input.substring("getAllCommentData+".length(), input.length());
-		debug.trace("itemKeyString_"+itemKeyString);
+		String itemKeyString = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT.length(), input.length());
 		
 		//JSON化
 		JSONObject rootObject = null;
 		String itemKeyName = null;
 		JSONObject userKeyObject = null;
 		String userKeyName = null;
+		String triggerID = null;
+		
 		try {
 			rootObject = new JSONObject(itemKeyString);
 			JSONObject itemKeyObject = rootObject.getJSONObject("itemKey");
@@ -318,6 +394,8 @@ GreetingService {
 			
 			userKeyObject = rootObject.getJSONObject("userKey");
 			userKeyName = userKeyObject.getString("name");
+			
+			triggerID = rootObject.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 		} catch (JSONException e) {
 			debug.trace("getCommentQualifi_error_"+e);
 		}
@@ -332,6 +410,8 @@ GreetingService {
 		
 		if (0 < items.size()) {
 			debug.assertTrue(items.size() == 1, "コメント取得時に、一意を期待して取得した、キーに該当するアイテムが一件以上存在する");
+			
+			//First, return back the number of comment and users who own this item.
 			
 			UserDataModel myself = getUserModelFromKeyName(userKeyName);
 			
@@ -358,21 +438,35 @@ GreetingService {
 			
 			if (comment == null) {//このアイテムに関するコメントは一件も無い
 //				userKeyNameでユーザーを取得する
+				{
+					Map<String, Object> myNodataMap = new HashMap<String, Object>();
+					
+					myNodataMap.put("userInfo", myself.getKey());
+					myNodataMap.put("command", "NO_COMMENT");
+					
+					String currentCommentData = gson.toJson(myNodataMap);
+					debug.trace("currentCommentData_"+currentCommentData);
+					channel.sendMessage(channelId, currentCommentData);
+				}
 				
-				Map<String, Object> myNodataMap = new HashMap<String, Object>();
 				
-				myNodataMap.put("userInfo", myself.getKey());
-				myNodataMap.put("command", "NO_COMMENT");
 				
-				String currentCommentData = gson.toJson(myNodataMap);
-				debug.trace("currentCommentData_"+currentCommentData);
-				channel.sendMessage(channelId, currentCommentData);
 			}
+			
+			//どのみちリクエスト自体が届いているので、返答
+			Map<String, Object> answerMap = new HashMap<String, Object>();
+			answerMap.put("userInfo", myself.getKey());
+			answerMap.put("command", "GETCOMMENT_ACCEPTED");
+			answerMap.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+			
+			String commentAnswerData = gson.toJson(answerMap);
+			debug.trace("commentAnswerData_"+commentAnswerData);
+			channel.sendMessage(channelId, commentAnswerData);//とりあえず受け付けた事を返答する
 		}
 		
 		
 		
-		return "ok";
+		return "ok";//ここでもいいのかもしれないが、面倒なので評価したくない
 	}
 	
 	
@@ -383,8 +477,7 @@ GreetingService {
 	 * @return
 	 */
 	private String getLatestCommentQualification(String input) {
-		String itemKeyString = input.substring("getSingleCommentData+".length(), input.length());
-		debug.trace("getLatestCommentQualifi_itemKeyString_"+itemKeyString);
+		String itemKeyString = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT.length(), input.length());
 		
 		//JSON化
 		JSONObject rootObject = null;
@@ -475,9 +568,9 @@ GreetingService {
 				UserDataModel commentedUserData = getUserModelFromKeyName(currentComment.getM_commentMasterID().getName());
 				Map<String, Object> map = new HashMap<String, Object>();
 
+				map.put("command", "LATEST_COMMENT_DATA");
 				map.put("requested", rootObject);
 				map.put("wholeCommentData", currentComment);
-				map.put("command", "LATEST_COMMENT_DATA");
 				map.put("userInfo", myself.getKey());
 				map.put("userImageNumber", commentedUserData.getImageNumber());
 				
@@ -575,12 +668,15 @@ GreetingService {
 	private String getCurrentUserDataQualification(String input) {
 		input = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA.length(), input.length());
 		
-		
 		Key userKey = null;
-		String myUserName = null; 
+		String myUserName = null;
+		String triggerID = null;
 		try {
-			userKey = gson.fromJson(input, Key.class);
+			userKey = gson.fromJson(input, Key.class);//,,,what? does it work correct? involving other data...
 			myUserName = userKey.getName();
+			
+			JSONObject jsonDatas = new JSONObject(input);
+			triggerID = jsonDatas.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 		} catch (Exception e) {
 			debug.trace("getCurrentUserDataQualification_gson_parse_"+e);	
 		}
@@ -593,6 +689,7 @@ GreetingService {
 		map.put("userOwnItems", myUserData.getItemKeys());
 		map.put("userInfo", myUserData.getKey());
 		
+		
 		String currentUserItemDatasString = gson.toJson(map);
 		
 		channel.sendMessage(channelId, currentUserItemDatasString);
@@ -602,6 +699,7 @@ GreetingService {
 		userMap.put("command", ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA);
 		userMap.put("userData", myUserData);
 		userMap.put("userInfo", myUserData.getKey());
+		userMap.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 		
 		String currentUserDataString = gson.toJson(userMap);
 		
@@ -630,6 +728,7 @@ GreetingService {
 		JSONObject newTaggedItemKeyObject = null;
 		String newTagNameString = null;
 		String newTagKeyString = null;
+		String triggerID = null;
 		
 		JSONObject taggingUserKeyObject = null;
 		String currentItemNameString = null;
@@ -644,12 +743,15 @@ GreetingService {
 			currentItemNameString = newTaggedItemKeyObject.get("name").toString();
 			taggingUserNameString = taggingUserKeyObject.get("name").toString();
 			currentUserDataModel = getUserModelFromKeyName(taggingUserNameString);
+			
+			triggerID = jsonDatas.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 		} catch (JSONException e) {
 			debug.trace("addTagToItemQualification_"+e);
 		}
 		
 
 		newTagKeyString = newTagNameString;//アイテム名との組み合わせがいいな。
+		debug.trace("タグの名称は_"+newTagKeyString);
 		/*
 		 * {"itemKey":{"kind":"item", "id":0, "name":"http://a"}, "newTag":"aaaa", "userKey":{"kind":"user", "id":0, "name":"aaaa@bbbb"}}
 		 */
@@ -659,25 +761,8 @@ GreetingService {
 		 * 事前準備、ユーザーとアイテムの検索をしておく
 		 */
 		//タグ付けされたアイテムのキー
-		Key newTaggedItemKey = Datastore.createKey(ItemDataModel.class, currentItemNameString);
-
-		debug.trace("newTaggedItemKey_"+newTaggedItemKey.getName());
 		
-		List<ItemDataModel> items = null;
-		try {//該当するアイテムを探す
-			ItemDataModelMeta itemMeta = ItemDataModelMeta.get();
-			items = Datastore.query(itemMeta)
-			.filter(itemMeta.key.equal(newTaggedItemKey))
-			.asList(); 
-		} catch (Exception e) {
-			debug.trace("該当するアイテムを探す_"+e);
-		}
-		
-		ItemDataModel currentItemDataModel = null;
-		if (0 < items.size()) {
-			debug.assertTrue(items.size() == 1, "サイズが1ではない");
-			currentItemDataModel = Datastore.get(ItemDataModel.class, items.get(0).getKey());
-		}
+		ItemDataModel currentItemDataModel = getItemDataModelFromItemName(currentItemNameString);
 		
 		debug.trace("currentUserDataModel_getKey_"+currentUserDataModel.getKey());
 		
@@ -706,13 +791,11 @@ GreetingService {
 			//タグを付けたのが自分かどうか、という情報は欲しい。
 			
 			if (itemOwnerList.contains(currentUserDataModel.getKey())) {//あんたの手元にこのタグもうあるじゃん
-				debug.trace("すでにこのアイテムについてのタグは所持されているby_"+currentUserDataModel.getKey());
-				
-				
-				
+				debug.trace("あんたの手元にこのタグもうあるじゃん、なんで取りにきてるの？");
 				Map<String, Object> channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN = new HashMap<String, Object>();
 				channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN.put("command", "TAG_ALREADY_OWN");
 				channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN.put("userInfo", currentUserDataModel.getKey());
+				channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 				
 				String channelString_TAG_FOR_THIS_ITEM_ALREADY_OWN = gson.toJson(channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN);
 				channel.sendMessage(channelId, channelString_TAG_FOR_THIS_ITEM_ALREADY_OWN);
@@ -768,15 +851,21 @@ GreetingService {
 				debug.trace("error_"+e);
 			}
 			
-			//TODO　ユーザーの持ちタグ情報をユーザーに追加、するか、どうか。アイテムに紐づいてるから、アイテムを捨てるときに捨てればいいのだが。
 			
 			debug.trace("タグ作成完了");
 			Map<String, Object> map = new HashMap<String, Object>();
 			try {
-				map.put("command", "TAG_CREATED");
-				map.put("value", newTagNameString);
-				map.put("tagId", currentTagkey);
+				/*
+				 * rootObject.get("itemName").isString().toString(), 
+						rootObject.get("tagObject").isObject()
+				 */
+				map.put("command", ClientSideRequestQueueModel.EVENT_TAG_CREATED);//ここでイベントとして、タグが発行出来た事を知らせる
+				map.put("itemName", currentItemDataModel.getKey().getName());
+				map.put("taggedItem", Datastore.get(ItemDataModel.class, currentItemDataModel.getKey()));
+				map.put("tagObject", newTagData);
 				map.put("userInfo", currentUserDataModel.getKey());
+				map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+				
 				
 				String myCurrentJsonData = gson.toJson(map);
 				
@@ -785,6 +874,76 @@ GreetingService {
 				debug.trace("TAG_CREATED_error_"+e);
 			}
 			
+			
+		}
+		
+		return "ok";
+	}
+	
+	/**
+	 * 各ユーザーが該当のアイテムに対してセットしてあるタグを、ユーザーごとに取得する。
+	 * アイテムにセットしてあるタグ全体を取得したのち、タグx持ち主　分だけブロードキャストする。
+	 * アイテムi についての　タグA を　a,b　が持っていたら、
+	 * A-a
+	 * A-b　
+	 * という内容で送る。すげー量。
+	 * 　
+	 * @param input
+	 * @return
+	 */
+	private String getItemTagByUserQualification (String input) {
+		String inputKey = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG.length(), input.length());
+		
+		String triggerID = null;
+		
+		String userNameString = null;
+		String itemNameString = null;
+		
+		UserDataModel myUserModel = null;
+		ItemDataModel currentItem = null;
+		try {
+			JSONObject rootObject = new JSONObject(inputKey);
+			debug.trace("rootObject_"+rootObject);
+
+			triggerID = rootObject.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
+			userNameString = rootObject.getJSONObject("userInfo").getString("name");
+			myUserModel = getUserModelFromKeyName(userNameString);
+			
+			itemNameString = rootObject.getJSONObject("itemInfo").getString("name");
+			
+			currentItem = getItemDataModelFromItemName(itemNameString);
+		} catch (JSONException e) {
+			debug.trace("getItemTagByUserQualification_error_"+e);
+		}
+		
+		
+		
+		//アイテムキーにあるタグリストから、タグを一個ずつ召還、
+		//その召還したタグのオーナーごとに、一個ずつメッセージを飛ばす
+		
+		for (Iterator<Key> currentTagKeyItel = currentItem.getM_tagList().iterator(); currentTagKeyItel.hasNext();) {
+			Key currentTagDataModelKey = currentTagKeyItel.next();
+			TagDataModel currentTagDataModel = Datastore.get(TagDataModel.class, currentTagDataModelKey);
+			debug.trace("phase_1_"+currentTagDataModel);
+			
+			for (Iterator<Key> userDataModelKeyItel = currentTagDataModel.getM_itemOwnerList().iterator(); userDataModelKeyItel.hasNext();) {
+				Key currentUserDataModelKey = userDataModelKeyItel.next();
+				debug.trace("currentUserDataModelKey_"+currentUserDataModelKey);
+				UserDataModel otherUserDataModel = Datastore.get(UserDataModel.class, currentUserDataModelKey);
+				debug.trace("phase_2_"+otherUserDataModel);
+				
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("command", ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG);
+				map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+				map.put("userInfo", myUserModel.getKey());
+				//タグ
+				map.put("tagObject", currentTagDataModel);
+				//オーナー名
+				map.put("ownerObject", otherUserDataModel);
+				String jsonData = gson.toJson(map);//おぞましい量のメッセージになるはず
+				channel.sendMessage(channelId, jsonData);
+			}
 			
 		}
 		
@@ -805,6 +964,8 @@ GreetingService {
 		JSONObject userKeyObject = null;
 		String userName = null;
 		UserDataModel myUserModel = null;
+		
+		String triggerID = null;
 		try {
 			/*
 			 * このユーザーキーで、アイテムを登録する。
@@ -817,6 +978,8 @@ GreetingService {
 			userName = userKeyObject.getString("name");
 			
 			myUserModel = getUserModelFromKeyName(userName);
+			
+			triggerID = jsonDatas.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 		} catch (Exception e) {
 			debug.trace("parse_error_"+e);
 		}
@@ -864,6 +1027,8 @@ GreetingService {
 				channelMap_ITEM_ALREADY_OWN.put("itemAddressKey", itemAddressKey);
 				channelMap_ITEM_ALREADY_OWN.put("requestedItemKey", currentItemDataModel.getKey());
 				channelMap_ITEM_ALREADY_OWN.put("userInfo", myUserModel.getKey());
+				channelMap_ITEM_ALREADY_OWN.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+				
 				
 
 				String channelString_ITEM_ALREADY_OWN = gson.toJson(channelMap_ITEM_ALREADY_OWN);
@@ -911,6 +1076,7 @@ GreetingService {
 			map.put("command", "ITEM_CREATED");
 			map.put("value", itemAddressKey);
 			map.put("userInfo", myUserModel.getKey());
+			map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 			String channelItemCreatedString = gson.toJson(map);
 			
 			channel.sendMessage(channelId, channelItemCreatedString);
@@ -938,6 +1104,7 @@ GreetingService {
 			map.put("command", "ITEM_ADDED_TO_USER");
 			map.put("currentItemkey", currentItemkey);
 			map.put("userInfo", myUserModel.getKey());
+			map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 			String currentMapString = gson.toJson(map);
 
 			channel.sendMessage(channelId, currentMapString);
@@ -978,7 +1145,8 @@ GreetingService {
 	 */
 	private String getItemFromKeyQualification(String input) {
 		//JSONからKeyを取得する。
-		String keySource = input.substring("getItemData+".length(), input.length());
+		String keySource = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_KEY.length(), input.length());
+		
 		debug.trace("getItemFromKeyQualification_keySource_"+keySource);
 		JSONObject rootObject = null;
 		
@@ -991,8 +1159,10 @@ GreetingService {
 		JSONObject itemModelObject = null;
 		String itemModelKeyName = null;
 		ItemDataModel itemModel = null;
+		String triggerID = null;
 		try {
 			rootObject = new JSONObject(keySource);
+			triggerID = rootObject.getString(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID);
 			userObject = rootObject.getJSONObject("userKey");
 			myUserKeyName = userObject.getString("name");
 			myModel = getUserModelFromKeyName(myUserKeyName);
@@ -1006,8 +1176,13 @@ GreetingService {
 		}
 		
 		
+		/*
+		 * アイテム情報を届ける
+		 */
 		Map<String,Object> map = new HashMap<String,Object>();
 		map.put("command", "PUSH_ITEM");
+		debug.trace("triggerID_"+triggerID);
+		map.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
 		map.put("item", itemModel);
 		map.put("userInfo", myModel.getKey());
 		String itemWithMyself = gson.toJson(map);
@@ -1015,6 +1190,32 @@ GreetingService {
 		channel.sendMessage(channelId, itemWithMyself);
 		
 		
+		/*
+		 * アイテムに付随している情報から、タグリストを作成、特にユーザーに関連する物だけ返す
+		 */
+		if (0 < itemModel.getM_tagList().size()) {
+			
+			for (Iterator<Key> currentTagDataModelKeyItel = itemModel.getM_tagList().iterator(); currentTagDataModelKeyItel.hasNext();) {
+				TagDataModel currentTagDataModel = Datastore.get(TagDataModel.class, currentTagDataModelKeyItel.next());
+				if (currentTagDataModel.getM_itemOwnerList().contains(myModel.getKey())) {//タグの持ち主リストに自分がはいっていたら
+//					rootObject.get("itemName").isString().toString(), 
+//					rootObject.get("tagObject").isObject()
+				
+					Map<String,Object> tagMap = new HashMap<String,Object>();
+					tagMap.put(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID, triggerID);
+					tagMap.put("itemName", itemModel.getKey().getName());
+					tagMap.put("tagObject", currentTagDataModel);
+					tagMap.put("userInfo", myModel.getKey());
+					tagMap.put("command", ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED);
+					
+					
+					String itemNameWithMyTag = gson.toJson(tagMap);
+					
+					channel.sendMessage(channelId, itemNameWithMyTag);
+					
+				}
+			}
+		}
 
 		return "ok";
 	}
@@ -1036,6 +1237,24 @@ GreetingService {
 		if (0 < items.size()) {
 			debug.assertTrue(items.size() == 1, "getUserKeyFromKey_サイズが大きすぎる");
 			return items.get(0);
+		}
+		return null;
+	}
+	
+	/**
+	 * タグモデルを名称キーから取得する
+	 * @param tagName
+	 * @return
+	 */
+	private TagDataModel getTagDataModelFromName(String tagName) {
+	TagDataModelMeta tagMeta = TagDataModelMeta.get();
+		
+		List <TagDataModel> tags = Datastore.query(tagMeta)
+		.filter(tagMeta.key.equal(Datastore.createKey(TagDataModel.class, tagName)))
+		.asList();  
+		if (0 < tags.size()) {
+			debug.assertTrue(tags.size() == 1, "getTagKeyFromKey_サイズが大きすぎる");
+			return tags.get(0);
 		}
 		return null;
 	}

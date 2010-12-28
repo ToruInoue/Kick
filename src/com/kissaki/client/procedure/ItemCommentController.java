@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.mortbay.util.ajax.JSON;
 
+import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
@@ -25,7 +26,7 @@ import com.kissaki.client.subFrame.debug.Debug;
 public class ItemCommentController {
 	Debug debug;
 	private final KickController kickCont;
-	private final JSONObject itemKey;
+	private final JSONObject m_itemKey;
 	List<CommentDialogBox> commentDialogList;//コメントリストのダイアログの管理、ソート基準によっていろいろ変化しそう。
 	
 	static final int SORT_MODE_USER = 0;//ユーザー単位でのコメント まあ、、、こっちですよね。
@@ -39,11 +40,40 @@ public class ItemCommentController {
 		debug = new Debug(this);
 		
 		commentDialogList = new ArrayList<CommentDialogBox>();//初期化
+		
+		debug.assertTrue(kickCont != null, "kickContがnull");
+		debug.assertTrue(itemKeyObject != null, "itemKeyObjectがnull");
+		
+		
 		this.kickCont = kickCont;
-		this.itemKey = itemKeyObject;
+		this.m_itemKey = itemKeyObject;
 	}
 
-	
+	/*
+	 * ユーザーのタグ情報が取得出来たので、ボードに足す
+	 * ボードが無ければ無視する
+	 * 
+	 * 教訓としては、ユーザーごとのデータ取得の斬り分けをどれだけフラットに保てるか、という勝負な訳だ。
+	 * ビューをどれだけコントローラと分けられるか。レイヤー化できるか。
+	 * あと、メッセージングすげえ。
+	 */
+	public void addTagForUser (String currentMasterUserKey, JSONArray tagArray) {
+		//currentMasterUserKey
+		//userOwnTagArray
+		for (Iterator<CommentDialogBox> commentDialogItel = commentDialogList.iterator(); commentDialogItel.hasNext();) {
+			//リスト中で、マスターの名称が一致するものを探す
+			CommentDialogBox currentCommentDialogBox = commentDialogItel.next();
+			
+			if (currentMasterUserKey.equals(currentCommentDialogBox.getMasterUserNameWithPass())) {
+				debug.trace("addCommentToMyBoard_このボードの内容に、追記する。");
+				
+				
+//				currentCommentDialogBox.updateTag(tagArray);
+//				Comment(currentCommentBody, currentCommentDate, currentCommentedByString);
+				return;
+			}
+		}
+	}
 	
 	/**
 	 * 自分からの通信内容。おれ書き込んだよ、と。
@@ -71,9 +101,17 @@ public class ItemCommentController {
 		debug.trace("currentMyName_"+currentMyName+"	/commentMasterUserName_"+commentMasterUserName);
 		
 		JSONNumber numberObject = commentBlock.get("userImageNumber").isNumber();
-		debug.trace("なんにゃら_"+numberObject);
+		
 		int imageNumber = (int)numberObject.doubleValue();
 		debug.trace("addCommentFromMyself_numberObject_"+numberObject);
+		
+		debug.assertTrue(currentMyName != null, "currentMyNameがnull");
+		debug.assertTrue(currentMasterUserKey != null, "currentMasterUserKeyがnull");
+		debug.assertTrue(currentCommentBody != null, "currentCommentBodyがnull");
+		debug.assertTrue(currentCommentDate != null, "currentCommentDateがnull");
+		debug.assertTrue(currentCommentedByString != null, "currentCommentedByStringがnull");
+		
+		
 		
 		//自分だったら
 		if (currentMyName.equals(commentMasterUserName)) {//自分で自分のところに書き込んだ
@@ -97,21 +135,31 @@ public class ItemCommentController {
 	 * @param commentBlock
 	 */
 	public void addCommentFromSomeone(JSONObject commentBlock) {
+		/*
+		 * commentBlock_{"userImageNumber":2, "wholeCommentData":{"m_commentMasterID":{"kind":"user", "id":0, "name":"bbbb@bbbb"}, "m_commentBody":"Kick%20here!", "m_commentedBy":{"kind":"user", "id":0, "name":"bbbb@bbbb"}, "key":{"kind":"comment", "id":2}}}
+			class com.kissaki.client.KickController:SomeCommentGet_error_java.lang.NullPointerException
+		 */
+		debug.trace(kickCont.getUStCont().getUserName()+"_@_addCommentFromSomeone_commentBlock_"+commentBlock);
 		JSONObject rootObject = commentBlock.get("wholeCommentData").isObject();
 		
 		JSONObject currentMasterUserKey = rootObject.get("m_commentMasterID").isObject();
 		String commentMasterUserName = currentMasterUserKey.get("name").isString().toString();
-		
 		String currentCommentBody = rootObject.get("m_commentBody").isString().toString();
+		
 		String currentCommentDate = "適当";//commentBlock.get("commentDate").isString().toString();
 		JSONObject currentCommentedBy = rootObject.get("m_commentedBy").isObject();
 		String currentCommentedByString = currentCommentedBy.get("name").isString().toString();
-		
 		String currentMyName = kickCont.getUStCont().getUserNameWithPassAroundDoubleQuart();
 		
-		JSONNumber imageNumberObject = rootObject.get("userImageNumber").isNumber();
-		int imageNumber = (int)imageNumberObject.doubleValue();
-		
+		int imageNumber = -1;
+		try {
+			debug.trace(kickCont.getUStCont().getUserName()+"_@_rootObject_"+rootObject);
+			JSONNumber imageNumberObject = commentBlock.get("userImageNumber").isNumber();
+			imageNumber = (int)imageNumberObject.doubleValue();
+			
+		} catch (Exception e) {
+			debug.trace("画像の数字を得る部分でのerror_"+e);
+		}
 		
 		//他人が自分のところに書き込んだ
 		if (currentMyName.equals(commentMasterUserName)) {
@@ -169,7 +217,7 @@ public class ItemCommentController {
 		commentDialogList.add(
 				new CommentDialogBox(
 						kickCont, 
-						itemKey,
+						m_itemKey,
 						currentMasterUserKey, 
 						image, 
 						CommentDialogBox.MODE_COMMENT,
@@ -218,6 +266,8 @@ public class ItemCommentController {
 			
 			if (currentMyName.equals(currentCommentDialogBox.getMasterUserNameWithPass())) {
 				debug.trace("addCommentToMyBoard_このボードの内容に、追記する。");
+				
+				
 				currentCommentDialogBox.updateComment(currentCommentBody, currentCommentDate, currentCommentedByString);
 				return;
 			}
@@ -321,7 +371,7 @@ public class ItemCommentController {
 		commentDialogList.add(
 			new CommentDialogBox(
 					kickCont, 
-					itemKey,
+					m_itemKey,
 					kickCont.getUStCont().getUserKey(), //MasterKey
 					image,
 					CommentDialogBox.MODE_YET_COMMENT,

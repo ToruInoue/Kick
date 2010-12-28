@@ -12,7 +12,7 @@ import com.kissaki.client.subFrame.debug.Debug;
 public class ClientSideCurrentItemDataModel {
 	Debug debug;
 	
-	private JSONObject m_itemdata;//この中に、名前とかキーとかアレイとかわんさか入ってる、、かと思ったら、キーしか入ってない！
+	private JSONObject m_itemdata;
 	
 	public ClientSideCurrentItemDataModel (JSONObject itemdata) {
 		debug = new Debug(this);
@@ -40,6 +40,11 @@ public class ClientSideCurrentItemDataModel {
 	
 	/**
 	 * タグのアレイを抽出する
+	 * このアイテムに着いているタグ全てになるので、
+	 * ユーザーのタグではない。
+	 * うーーん、、
+	 * 
+	 * ユーザー所持のタグを抽出する作業を、サーバに任せよう、で、帰ってきた物をここで表示する。
 	 * @return
 	 */
 	public JSONArray getTagArray() {
