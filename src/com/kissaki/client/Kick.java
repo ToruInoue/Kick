@@ -3,6 +3,7 @@ package com.kissaki.client;
 import com.kissaki.client.channel.Channel;
 import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
+import com.kissaki.client.messengerSystem.MessengerSystem;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 
@@ -42,10 +43,11 @@ public class Kick implements EntryPoint {
 	 */
 	public void onModuleLoad() {
 		
-		if (true) {
+		if (false) {
 			kCont = new KickController();
 			return;
 		}
+		if (false) {
 		
 		debug = new Debug(this);
 		
@@ -62,18 +64,13 @@ public class Kick implements EntryPoint {
 		p.rect(""+30, ""+20, ""+55, ""+55);
 		debug.trace("createInteger_"+IntegerJavaScriptObject.getInt());
 		
-		
-//		p.ambient(createInteger(10), createInteger(10));
-		
-		
-//		//上書きできるw
-//		p2 = new ProcessingImplements(canvas.getElement(), "");
-//		p2.size("100","100", "");
-//		p2.ellipse("50", "40", "50", "50");
-//
-//		//ログイン
+	
+//		//ログイン前の仮キー
 		iAm = "p_"+System.currentTimeMillis();
-//		p2.init("");//あれ、引数がある、、、
+
+		
+		
+		
 
 		//ログイン後の入力処理
 		greetingService.greetServer("100",
@@ -88,6 +85,10 @@ public class Kick implements EntryPoint {
 			}
 		}
 		);
+	}
+		MessengerSystem messenger = new MessengerSystem();
+		
+		
 		return;
 	}
 	

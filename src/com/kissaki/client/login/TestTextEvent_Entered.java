@@ -17,7 +17,7 @@ public class TestTextEvent_Entered {
 	
 	public TestTextEvent_Entered () {
 		debug = new Debug(this);
-		MessengerSystem messenger = new MessengerSystem("テキストフィールド");
+
 	}
 	
 
