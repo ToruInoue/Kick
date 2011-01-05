@@ -5,8 +5,10 @@ import com.google.gwt.dom.client.Text;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
@@ -40,6 +42,7 @@ public class CommentDialogBox extends PopupPanel {
 	final TextBox commentWindow;
 	
 	TextArea commentSpace;
+	VerticalPanel tagVerticalPanel;
 	
 	/**
 	 * コンストラクタ
@@ -77,8 +80,18 @@ public class CommentDialogBox extends PopupPanel {
 		HTML t = new HTML(name);
 		
 		panel.add(hPanel);
-		hPanel.add(userImage);
-		hPanel.add(t);
+		
+		
+		HorizontalPanel hUserPanel = new HorizontalPanel();
+		tagVerticalPanel = new VerticalPanel();
+		hUserPanel.add(userImage);//画像
+		hUserPanel.add(t);//名前
+		
+		hUserPanel.add(tagVerticalPanel);//タグ
+		
+		hPanel.add(hUserPanel);
+		
+		
 		
 		commentSpace.setText(comment);//この部分、改変出来るのかな。出来るな。
 		
@@ -180,6 +193,20 @@ public class CommentDialogBox extends PopupPanel {
 	public String getMasterUserNameWithPass () {
 		String masterUserName = m_masterUserKey.get("name").isString().toString();
 		return masterUserName;
+	}
+
+	
+	/**
+	 * タグのオブジェクトを表示する
+	 * @param tagObject
+	 */
+	public void updateTag(JSONObject tagObject) {
+		String tagText = tagObject.get("key").isObject().get("name").isString().toString();
+		Button b = new Button();
+		b.setText(tagText);
+		
+		//TODO 既に含んでいるかどうか、チェックしないと。コントローラーでチェックしてほしいよね。
+		tagVerticalPanel.add(b);
 	}
 	
 

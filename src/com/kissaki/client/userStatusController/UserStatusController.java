@@ -189,13 +189,13 @@ public class UserStatusController {
 		for (Iterator<ClientSideRequestQueueModel> qIteletor = m_rQueueModelMap.iterator(); qIteletor.hasNext(); i++) {
 			ClientSideRequestQueueModel current = qIteletor.next();
 			
-			debug.trace("current_getM_dataURL_"+current.getM_dataURL());
-			debug.trace("current.getM_id()_"+current.getM_id()+"_/id.toString()_"+id.toString());
+//			debug.trace("current_getM_dataURL_"+current.getM_dataURL());
+//			debug.trace("current.getM_id()_"+current.getM_id()+"_/id.toString()_"+id.toString());
 
 			if (id.toString().contains(current.getM_id())) {
 				//通信として実行完了したマークを付ける(直前にローディングになっている必要があるが、仕様としてmustではないためチェックしていない。)
 				current.setLoaded();
-				debug.trace("完全に一致");
+//				debug.trace("完全に一致");
 			}
 
 			

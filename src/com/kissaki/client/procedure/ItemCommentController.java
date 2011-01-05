@@ -57,19 +57,19 @@ public class ItemCommentController {
 	 * ビューをどれだけコントローラと分けられるか。レイヤー化できるか。
 	 * あと、メッセージングすげえ。
 	 */
-	public void addTagForUser (String currentMasterUserKey, JSONArray tagArray) {
+	public void addTagForUser (JSONObject tagOwnerObject, JSONObject tagObject) {
 		//currentMasterUserKey
 		//userOwnTagArray
 		for (Iterator<CommentDialogBox> commentDialogItel = commentDialogList.iterator(); commentDialogItel.hasNext();) {
 			//リスト中で、マスターの名称が一致するものを探す
 			CommentDialogBox currentCommentDialogBox = commentDialogItel.next();
+			String tagOwnerObjectNameString = tagOwnerObject.get("key").isObject().get("name").isString().toString();
 			
-			if (currentMasterUserKey.equals(currentCommentDialogBox.getMasterUserNameWithPass())) {
+			if (tagOwnerObjectNameString.equals(currentCommentDialogBox.getMasterUserNameWithPass())) {
 				debug.trace("addCommentToMyBoard_このボードの内容に、追記する。");
+				debug.trace("この人のタグをこの人のボードに足す");
+				currentCommentDialogBox.updateTag(tagObject);
 				
-				
-//				currentCommentDialogBox.updateTag(tagArray);
-//				Comment(currentCommentBody, currentCommentDate, currentCommentedByString);
 				return;
 			}
 		}

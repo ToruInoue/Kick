@@ -21,11 +21,11 @@ public class ClientSideRequestQueueModel {
 	private static final int REQUEST_STATUS_LOADING = REQUEST_STATUS_YET+1;
 	private static final int REQUEST_STATUS_LOADED = REQUEST_STATUS_LOADING+1;
 
+	public final static String REQUEST_TYPE_LOGIN = "USER_LOGIN";
 	public final static String REQUEST_TYPE_GET_TAG_FROM_ITEM = "GET_TAG_BY_ITEM";
 	public final static String REQUEST_TYPE_GET_TAG_FROM_PERSON = "GET_TAG_BY_YOU";
 	public final static String REQUEST_TYPE_ADDNEWTAG = "ADD_TAG";
 	public final static String REQUEST_TYPE_UPDATE_TAG = "UPDATE_TAG";
-	public final static String REQUEST_TYPE_ADD_ITEM = "ADD_ITEM";
 	public final static String REQUEST_TYPE_GET_ITEM_FROM_KEY = "GET_ITEM_FROM_KEY";
 	public final static String REQUEST_TYPE_GET_ITEM_FROM_ADDRESS = "GET_ITEN_FROM_ADDRESS";
 	public final static String REQUEST_TYPE_UPDATE_MYDATA = "MY_CURRENT";
@@ -34,6 +34,12 @@ public class ClientSideRequestQueueModel {
 	public final static String REQUEST_TYPE_GET_LATESTCOMMENT = "GET_LATESTCOMMENT";
 	public final static String REQUEST_TYPE_ADDCOMMENT = "ADD_COMMENT";
 	public final static String REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG = "GET_USER_INDIVIDUAL_TAG";
+	public final static String REQUEST_TYPE_GET_SPECIFIC_USER_INFORMATION = "GET_USER_INFORMATION";
+	public static final String REQUEST_TYPE_ADD_ITEM_WITH_URL = "ADDING_URL_OF_ITEMDATA";
+	public static final String REQUEST_TYPE_ADD_TAG_TO_ITEM = "ADDING_TAG_TO_THIS_ITEM";
+	
+	
+	public final static String GET_ALL_USER_WHO_HAVE_THIS_ITEM = "GET_ALL_USER_COMMENT_TO_ITEM";
 	
 	
 	

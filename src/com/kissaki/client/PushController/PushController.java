@@ -60,7 +60,12 @@ public class PushController {
 		debug.assertTrue(commandString != null, "commandStringがnullです");
 		
 		
-		
+		if (commandString.contains(ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM)) {
+			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
+				debug.trace("要求していた全所持者リストが到着");
+				kCont.procedure(ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM+root);
+			}
+		}
 		if (commandString.contains("CURRENT_USER_DATA")) {
 			if (kCont.isMyself(root, kCont.getUStCont().getUserKey())) {
 				debug.trace("最新のUserDataを取得_"+root);
@@ -87,7 +92,6 @@ public class PushController {
 				kCont.procedure("NoComment+"+commandString);
 			} else {
 				debug.trace("他人で、コメントデータが無いやつが来た_"+kCont.getUserNameFromUserKey(root));
-//				kCont.procedure("SomeoneNoComment+"+commandString);
 			}
 		}
 		
@@ -118,6 +122,7 @@ public class PushController {
 				debug.trace("他人のコメントデータが保存出来た");
 			}
 		}
+		
 		/**
 		 * 
 		 */

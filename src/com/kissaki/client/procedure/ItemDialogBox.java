@@ -21,6 +21,7 @@ import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
+import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.view.client.SelectionChangeEvent;
@@ -39,7 +40,7 @@ import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentTa
  * @author ToruInoue
  *
  */
-public class ItemDialogBox extends DialogBox {
+public class ItemDialogBox extends PopupPanel {
 	Debug debug;
 	
 	private static final List<String> Tags = Arrays.asList(
