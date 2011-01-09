@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.kissaki.client.KickController;
+import com.kissaki.client.KickStatusInterface;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.subFrame.debug.Debug;
 
 /**
@@ -16,18 +18,17 @@ import com.kissaki.client.subFrame.debug.Debug;
  * @author ToruInoue
  *
  */
-public class OwnersViewController {
+public class OwnersViewController implements KickStatusInterface, MessengerGWTInterface {
 	Debug debug;
-	KickController kCont;
+	
 	List<OwnerModel> ownerModelList;
 	List<OwnerView> ownerViewList;
 	
 	Map<OwnerModel, OwnerView> connectionMap;
 	
-	public OwnersViewController (KickController kCont) {
+	public OwnersViewController () {
 		debug = new Debug(this);
-		this.kCont = kCont; 
-//		マップ化で、一致させられるかな？ このモデルのビューはこれ、ってやりたくない。
+		
 		ownerModelList = new ArrayList<OwnerModel>();
 		ownerViewList = new ArrayList<OwnerView>();
 		connectionMap = new HashMap<OwnerModel, OwnerView>();
@@ -35,7 +36,7 @@ public class OwnersViewController {
 	}
 	
 	public OwnerModel inputNewOwner (String userName) {
-		OwnerModel currentOwnerModel = new OwnerModel(kCont, userName);
+		OwnerModel currentOwnerModel = new OwnerModel(userName);
 		
 		int size = ownerModelList.size();
 		
@@ -51,11 +52,11 @@ public class OwnersViewController {
 		connectionMap.put(currentOwnerModel, currentOwnerView);
 		ownerModelList.add(currentOwnerModel);
 		
-		if (userName.equals(kCont.getUStCont().getUserName())) {//自分だったら、自分へのコメントを表示(自動)
-			
-		} else {//他人だったら、他人へのコメント(自動)　、書き込み枠を書く
-			
-		}
+//		if (userName.equals(kCont.getUStCont().getUserName())) {//自分だったら、自分へのコメントを表示(自動)
+//			
+//		} else {//他人だったら、他人へのコメント(自動)　、書き込み枠を書く
+//			
+//		}
 		
 		return currentOwnerModel;
 	}
@@ -106,5 +107,11 @@ public class OwnersViewController {
 	public void hideView(String userName){
 		OwnerModel currentOwnerModel = inputNewOwner(userName);
 		connectionMap.get(currentOwnerModel).hide();
+	}
+
+	@Override
+	public void receiveCenter(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 }

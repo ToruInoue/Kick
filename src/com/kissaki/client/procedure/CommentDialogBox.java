@@ -2,6 +2,8 @@ package com.kissaki.client.procedure;
 
 
 import com.google.gwt.dom.client.Text;
+import com.google.gwt.event.dom.client.ClickEvent;
+import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.http.client.URL;
@@ -17,6 +19,9 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.kissaki.client.KickController;
+import com.kissaki.client.KickStatusInterface;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.subFrame.debug.Debug;
 
 /**
@@ -25,12 +30,13 @@ import com.kissaki.client.subFrame.debug.Debug;
  * 
  * @author ToruInoue
  */
-public class CommentDialogBox extends PopupPanel {
+public class CommentDialogBox extends PopupPanel implements KickStatusInterface, MessengerGWTInterface {
 	Debug debug;
 	
 	static final int INTERFACE_NUMBER_ENTER = 13;
 	
-	private KickController kCont;
+	MessengerGWTImplement messenger;
+	JSONObject userKey = null;
 	
 	final JSONObject m_masterUserKey;
 	final Image m_userImage;
@@ -52,18 +58,15 @@ public class CommentDialogBox extends PopupPanel {
 	 * @param mode 
 	 * @param commentSpace
 	 */
-	public CommentDialogBox (final KickController kickCont, JSONObject itemKey, JSONObject masterUserKey, Image userImage, int mode, String comment) {
+	public CommentDialogBox (JSONObject itemKey, JSONObject masterUserKey, Image userImage, int mode, String comment) {
 		debug = new Debug(this);
 		
-		debug.assertTrue(kickCont != null, "kickContがnull");
 		debug.assertTrue(itemKey != null, "itemKeyがnull");
 		debug.assertTrue(masterUserKey != null, "masterUserKeyがnull");
 		debug.assertTrue(userImage != null, "userImageがnull");
 		debug.assertTrue(comment != null, "commentがnull");
 		
-		
-		
-		this.kCont = kickCont;
+		messenger = new MessengerGWTImplement(KICK_COMMENTDIALOG, this);
 		
 		this.m_itemKey = itemKey;
 		this.m_masterUserKey = masterUserKey;
@@ -101,21 +104,32 @@ public class CommentDialogBox extends PopupPanel {
 //		commentWindow.setSize("180", "20");
 		commentWindow.setMaxLength(140);
 		commentWindow.setPixelSize(180, 25);
+		commentWindow.addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				messenger.call(KICK_COMMENTDIALOG, "CommentWindowWantUserKey");
+			}
+			
+		});
 		commentWindow.addKeyDownHandler(new KeyDownHandler() {
 			@Override
 			public void onKeyDown(KeyDownEvent event) {
 				if (event.getNativeKeyCode() == INTERFACE_NUMBER_ENTER) {
+					debug.assertTrue(userKey != null, "userKey == null");
+					
 					//フォーカスを外す
 					commentWindow.setFocus(false);
 					
 					JSONObject commentWithUserKey = new JSONObject();
 					commentWithUserKey.put("comment", new JSONString(URL.encode(commentWindow.getText())));
-					commentWithUserKey.put("userKey", kCont.getUStCont().getUserKey());//このウインドウに書き込んだ人
+					commentWithUserKey.put("userKey", userKey);//このウインドウに書き込んだ人
 					commentWithUserKey.put("masterUserKey", m_masterUserKey);//このウインドウの主(Got from comment)
 					commentWithUserKey.put("itemKey", m_itemKey);
 					
 					debug.trace("commentWithUserKey_"+commentWithUserKey);
-					kCont.procedure("InputYourText+"+commentWithUserKey.toString());
+//					kCont.procedure("InputYourText+"+commentWithUserKey.toString());
+					messenger.call(KICK_CONTROLLER, "InputYourText", messenger.tagValue("InputYourText", commentWithUserKey));
 				}
 			}
 		});
@@ -161,9 +175,9 @@ public class CommentDialogBox extends PopupPanel {
 		int before = URL.decode(commentSpace.getText()).length();
 		int length = URL.decode(currentCommentBody+" by "+currentCommentedBy).length();
 		commentSpace.setText(URL.decode(commentSpace.getText()
-				+ currentCommentBody+" by "+currentCommentedBy) +"\n");//改行が効くといいな。
+				+ currentCommentBody+" by "+currentCommentedBy) +"\n");
 		
-		commentWindow.setText("");
+		commentWindow.setText("");//空にする
 		
 //		commentSpace.setCursorPos(100);//意図と違う
 		//commentSpace.setSelectionRange(before, length);//オートではスクロールしてくれませんね。
@@ -207,6 +221,14 @@ public class CommentDialogBox extends PopupPanel {
 		
 		//TODO 既に含んでいるかどうか、チェックしないと。コントローラーでチェックしてほしいよね。
 		tagVerticalPanel.add(b);
+	}
+
+	@Override
+	public void receiveCenter(String message) {
+		String exec = messenger.getCommand(message);
+		if (exec.equals("UserKeyFromControllerToCommentWindow")) {
+			userKey = messenger.getValueForTag(message, "userKey").isObject();
+		}
 	}
 	
 

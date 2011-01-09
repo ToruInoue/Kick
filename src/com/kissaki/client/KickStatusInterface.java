@@ -1,6 +1,17 @@
 package com.kissaki.client;
 
 public interface KickStatusInterface {
+	
+	
+	static final String KICK_CONTROLLER = "KICK_CONTROLLER";
+	static final String KICK_PUSHCONTROLLER = "KICK_PUSHCONTROLLER";
+	static final String KICK_LOGINDIALOG = "KICK_LOGINDIALOG";
+	static final String KICK_OWNERMODEL = "KICK_OWNERMODEL";
+	static final String KICK_ITEMDIALOGCONT = "KICK_ITEMDIALOGCONT";
+	static final String KICK_COMMENTDIALOG = "KICK_COMMENTDIALOG";
+	
+	
+	
 	static final int STATUS_KICK_APPINITIALIZE = -1;
 	
 	static final int STATUS_KICK_TESTVIEW_INIT = 0;

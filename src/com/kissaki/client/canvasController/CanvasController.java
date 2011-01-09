@@ -30,9 +30,9 @@ public class CanvasController {
 	 * コンストラクタ
 	 * @param kickCont
 	 */
-	public CanvasController (KickController kickCont, JSONObject userKey) {
+	public CanvasController (JSONObject userKey) {
 		debug = new Debug(this);
-		kCont = kickCont;
+		
 		itemDialogBoxList = new ArrayList<ItemDialogBox>();
 		this.userKey = userKey;
 		

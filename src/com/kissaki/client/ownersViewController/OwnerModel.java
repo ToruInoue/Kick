@@ -16,6 +16,9 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.kissaki.client.Kick;
 import com.kissaki.client.KickController;
+import com.kissaki.client.KickStatusInterface;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.subFrame.debug.Debug;
 
@@ -36,9 +39,11 @@ import com.kissaki.client.subFrame.debug.Debug;
  * @author ToruInoue
  *
  */
-public class OwnerModel {
+public class OwnerModel implements KickStatusInterface, MessengerGWTInterface {
 	Debug debug;
-	KickController kCont;
+	
+	MessengerGWTImplement messenger;
+
 	TextBox inputBox;
 	Button tagButton;
 	
@@ -57,10 +62,13 @@ public class OwnerModel {
 	 * コンストラクタ
 	 * @param userName
 	 */
-	public OwnerModel (KickController kCont, String userName) {
+	public OwnerModel (String userName) {
 		debug = new Debug(this);
+		
+		messenger = new MessengerGWTImplement(KICK_OWNERMODEL, this);
+		
 		this.userName = userName;
-		this.kCont = kCont; 
+
 		commentArray = new ArrayList<String>();
 		tagArray = new ArrayList<String>();
 	}
@@ -77,7 +85,8 @@ public class OwnerModel {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				kCont.procedure("OwnerImageTapped+"+userName);
+//				kCont.procedure("OwnerImageTapped+"+userName);
+				messenger.call(KICK_CONTROLLER, "OwnerImageTapped", messenger.tagValue("userName", userName));
 			}
 		});
 	}
@@ -142,7 +151,8 @@ public class OwnerModel {
 			@Override
 			public void onClick(ClickEvent event) {
 				debug.trace("ボタン押されてる");
-				kCont.procedure("TagButtonTapped+"+userName);
+//				kCont.procedure("TagButtonTapped+"+userName);
+				messenger.call(KICK_CONTROLLER, "TagButtonTapped", messenger.tagValue("userName", userName));
 			}
 		});
 		
@@ -163,13 +173,20 @@ public class OwnerModel {
 					commentWithUserKey.put("comment", new JSONString(URL.encode(inputBox.getText())));
 					commentWithUserKey.put("masterUserName", new JSONString(userName));
 					
-					kCont.procedure("CommentWritten+"+commentWithUserKey.toString());
-					
+//					kCont.procedure("CommentWritten+"+commentWithUserKey.toString());
+					messenger.call(KICK_CONTROLLER, "CommentWritten", messenger.tagValue("commentWithUserKey", commentWithUserKey));
 					inputBox.setText("");//空っぽ
 				}
 			}
 		});
 		return inputBox;
+	}
+
+
+	@Override
+	public void receiveCenter(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	

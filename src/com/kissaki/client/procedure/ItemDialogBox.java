@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.tools.ant.taskdefs.email.Message;
+
 import com.google.gwt.cell.client.TextCell;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -28,6 +30,9 @@ import com.google.gwt.view.client.SelectionChangeEvent;
 import com.google.gwt.view.client.SingleSelectionModel;
 
 import com.kissaki.client.KickController;
+import com.kissaki.client.KickStatusInterface;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.imageResource.Resources;
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentItemDataModel;
@@ -40,15 +45,17 @@ import com.kissaki.client.userStatusController.userDataModel.ClientSideCurrentTa
  * @author ToruInoue
  *
  */
-public class ItemDialogBox extends PopupPanel {
+public class ItemDialogBox extends PopupPanel implements KickStatusInterface, MessengerGWTInterface {
 	Debug debug;
+	
+	MessengerGWTImplement messenger;
 	
 	private static final List<String> Tags = Arrays.asList(
 	          "Like", "Want", "Have", "Had",
 	          "Good","とか"
 	     );
 	
-	private KickController kCont;
+//	private KickController kCont;
 	
 	Image image;
 	TextBox newTagBox;
@@ -59,9 +66,10 @@ public class ItemDialogBox extends PopupPanel {
 	
 	
 	public ItemDialogBox (KickController kickCont, JSONObject userKey, ClientSideCurrentItemDataModel currentModel, JSONArray myTagArray, int x, int y) {
-		debug = new Debug(this);
 		
-		this.kCont = kickCont;
+		debug = new Debug(this);
+		messenger = new MessengerGWTImplement(KICK_ITEMDIALOGCONT, this);
+//		this.kCont = kickCont;
 		this.m_userKey = userKey;
 		
 		if (myTagArray != null) {
@@ -83,7 +91,8 @@ public class ItemDialogBox extends PopupPanel {
 					debug.trace("newTagBox.getText().length()_error_"+e);
 				}
 				
-				kCont.procedure("ItemTapped+"+itemKey);
+//				kCont.procedure("ItemTapped+"+itemKey);
+				messenger.call(KICK_CONTROLLER, "ItemTapped", messenger.tagValue("itemKey", itemKey));
 			}
 		});
 		
@@ -120,7 +129,8 @@ public class ItemDialogBox extends PopupPanel {
 						buttonKey.put("itemKey", m_myModel.getItemKey());
 						buttonKey.put("userKey", m_userKey);
 						
-						kCont.procedure("TagTapped+"+buttonKey);
+//						kCont.procedure("TagTapped+"+buttonKey);
+						messenger.call(KICK_CONTROLLER, "TagTapped", messenger.tagValue("buttonKey", buttonKey));
 					}
 				});
 				userTagPanel.add(b);
@@ -181,7 +191,8 @@ public class ItemDialogBox extends PopupPanel {
 							debug.trace("newTagBox.getText().length()_error_"+e);
 						}
 						
-						kCont.procedure("TagUpload+"+itemKeyWithNewTag);
+//						kCont.procedure("TagUpload+"+itemKeyWithNewTag);
+						messenger.call(KICK_CONTROLLER, "TagUpload", messenger.tagValue("itemKeyWithNewTag", itemKeyWithNewTag));
 					}
 				}
 			}
@@ -243,6 +254,12 @@ public class ItemDialogBox extends PopupPanel {
 		} else {
 			userTagPanel.setVisible(false);
 		}
+	}
+
+	@Override
+	public void receiveCenter(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

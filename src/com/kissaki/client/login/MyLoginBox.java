@@ -5,6 +5,9 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.kissaki.client.KickController;
+import com.kissaki.client.KickStatusInterface;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.subFrame.debug.Debug;
 
 /**
@@ -12,22 +15,23 @@ import com.kissaki.client.subFrame.debug.Debug;
  * @author ToruInoue
  *
  */
-public class MyLoginBox extends DialogBox {
+public class MyLoginBox extends DialogBox implements KickStatusInterface, MessengerGWTInterface {
 	Debug debug;
 	final TextBox nameSpace = new TextBox();
 	final TextBox passSpace = new TextBox();
 	
+	MessengerGWTImplement messenger;
+	
 	String loginItemURL = null;//ログイン時にアイテムが選択されている、そのアイテムのURL(設定済みかどうかは、判らない
 	
 	
-	KickController kCont = null;
 	/**
 	 * コンストラクタ
 	 */
-	public MyLoginBox(KickController kickCont, String loginItemURL){
+	public MyLoginBox(String loginItemURL){
 		debug = new Debug(this);
+		messenger = new MessengerGWTImplement(KICK_LOGINDIALOG, this);
 		
-		this.kCont = kickCont;
 		this.loginItemURL = loginItemURL;
 		
 		setText("☆Login_"+loginItemURL);
@@ -89,13 +93,21 @@ public class MyLoginBox extends DialogBox {
 	 * ログインを行う
 	 */
 	public void login() {
-//		親への伝達、、ついにメッセージングの出番だぜ。
-		//
 		debug.trace("nameSpace_"+nameSpace);
 		debug.trace("passSpace_"+passSpace);
 		
-		kCont.login(nameSpace.getText(), passSpace.getText());
+		messenger.call(KICK_CONTROLLER, "loginWithURLPath", 
+				messenger.tagValue("name", nameSpace.getText()), 
+				messenger.tagValue("pass", passSpace.getText())
+				);
+		
 		this.hide();
+	}
+
+	@Override
+	public void receiveCenter(String message) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	

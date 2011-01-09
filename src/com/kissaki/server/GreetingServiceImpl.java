@@ -214,6 +214,7 @@ GreetingService {
 	 */
 	private String updateTagQualification(String input) {
 		String updateKey = input.substring(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_TAG.length(), input.length());
+		
 		/*
 		 * タグの情報に、ユーザー情報を追加
 		 */
@@ -861,7 +862,7 @@ GreetingService {
 		.asList(); 
 		
 		if (0 < tags.size()) {//同じキーを持った物は、存在しない筈。
-			debug.trace("currentTagkey_存在している_"+currentTagkey);
+			debug.trace("currentTagkeyが存在している_"+currentTagkey);
 			//複数個に対応していない
 			
 			TagDataModel currentTagDataModel = Datastore.get(TagDataModel.class, tags.get(0).getKey());//存在していたタグを引き出す
@@ -872,7 +873,8 @@ GreetingService {
 			//タグを付けたのが自分かどうか、という情報は欲しい。
 			
 			if (itemOwnerList.contains(currentUserDataModel.getKey())) {//あんたの手元にこのタグもうあるじゃん
-				debug.trace("あんたの手元にこのタグもうあるじゃん、なんで取りにきてるの？");
+				debug.trace("あんたの手元にこのタグもうあるじゃん。初期化だからって容赦しないんだからね！");
+				
 				Map<String, Object> channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN = new HashMap<String, Object>();
 				channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN.put("command", "TAG_ALREADY_OWN");
 				channelMap_TAG_FOR_THIS_ITEM_ALREADY_OWN.put("userInfo", currentUserDataModel.getKey());
@@ -1086,7 +1088,7 @@ GreetingService {
 		//すでにアイテムが登録されている場合、そのデータを引き出して加算する
 		if (0 < items.size()) {
 			//				既に存在しているので、取り出して、持ち主情報を更新
-			debug.trace("存在している_"+itemAddressKey);
+			debug.trace("アイテムがサーバ上に存在している_"+itemAddressKey);
 
 			ItemDataModel currentItemDataModel = Datastore.get(ItemDataModel.class, items.get(0).getKey());
 			

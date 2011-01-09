@@ -5,21 +5,18 @@ import java.util.Arrays;//array
 import java.util.Iterator;
 import java.util.List;//list
 import java.util.Map;
-import java.util.Set;
-
-
-import com.google.gson.JsonNull;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.json.client.JSONArray;
-import com.google.gwt.json.client.JSONNull;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Image;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
 import com.kissaki.client.PushController.PushController;
 import com.kissaki.client.canvasController.CanvasController;
 import com.kissaki.client.channel.Channel;
@@ -41,9 +38,11 @@ import com.kissaki.client.userStatusController.userDataModel.ClientSideRequestQu
  * @author ToruInoue
  *
  */
-public class KickController implements KickStatusInterface {
+public class KickController implements KickStatusInterface, MessengerGWTInterface {
 	
 	Debug debug = null;
+	
+	MessengerGWTImplement messenger;
 	
 	CanvasController canvasCont;
 	ScreenEventRegister reg;
@@ -56,6 +55,7 @@ public class KickController implements KickStatusInterface {
 	PushController pushController = null;
 	
 	OwnersViewController oVCont = null;
+	
 	int m_kickStatus = STATUS_KICK_APPINITIALIZE;
 	
 	
@@ -73,6 +73,9 @@ public class KickController implements KickStatusInterface {
 	public KickController () {
 		debug = new Debug(this);
 		debug.trace("コンストラクタに到達");
+		
+		messenger = new MessengerGWTImplement(KICK_CONTROLLER, this);
+		
 		uStCont = new UserStatusController();//Ginから取得出来るといいな。
 		
 		
@@ -83,24 +86,36 @@ public class KickController implements KickStatusInterface {
 		
 		
 		setKickStatus(STATUS_KICK_APPINITIALIZE);
-		procedure("startSamplePage");
+//		procedure("startSamplePage");
+		messenger.call(messenger.getName(), "startSamplePage");
 	}
+	
+//	public void procedure (String s) {
+//		debug.assertTrue(false, "dead");
+//		debug.trace("dummy_procedure_s"+s);
+//	}
+	
 	
 	/**
 	 * 実行処理
 	 */
-	public void procedure(String exec) {
+	@Override
+	public void receiveCenter(String message) {
+		String exec = messenger.getCommand(message);
+		
 		try {
 		switch (getKickStatus()) {
 		case STATUS_KICK_APPINITIALIZE:
-			if (exec.matches("startSamplePage")) {
+			if (exec.equals("startSamplePage")) {
+				
 				/*
 				 * サンプル画面を出す
 				 */
 				setKickStatus(STATUS_KICK_TESTVIEW_INIT);
 				
 				
-				procedure("testViewInitialize");
+//				procedure("testViewInitialize");
+				messenger.call(messenger.getName(), "testViewInitialize");
 			}
 			
 			
@@ -112,7 +127,6 @@ public class KickController implements KickStatusInterface {
 				HTML a = new HTML("<p id=\"spinner\">Please wait while we do what we do best.</p>");//アドレス埋め込み、そしてバックグラウンドに押し込む  この要素を入れるタイミングで確かに再描画とか発生するわな。
 //				a = new HTML("");
 				
-				debug.trace("到達");
 				/*
 				 * Googleでひらくような事をすれば、まあOKかなと思うのですが、
 				 * 画面遷移への使い道が増えるので、
@@ -128,21 +142,24 @@ public class KickController implements KickStatusInterface {
 //						//画像へのハンドラ、、どうするかな。
 //				)
 				);
+				
 				setKickStatus(STATUS_KICK_TESTVIEW_PROC);
-				procedure("testViewToLogin");
+				
+//				procedure("testViewToLogin");
+				
+				messenger.call(messenger.getName(), "testViewToLogin", messenger.tagValue("address", DEFAULT_REQUEST_PASS));
+				
 			}
 			
 		case STATUS_KICK_TESTVIEW_PROC:
-			if (exec.matches("testViewToLogin")) {
+			if (exec.equals("testViewToLogin")) {
 
 				//リンクが触られたら、ログインに行く。
 				setKickStatus(STATUS_KICK_LOGIN_INIT);
-				String address = DEFAULT_REQUEST_PASS;
+				String address = messenger.getValueForTag(message, "address").isString().toString();
 				
-				JSONObject addressObject = new JSONObject();
-				addressObject.put("imageAddress", new JSONString(address));
-				
-				procedure("startLogin+"+addressObject);
+//				procedure("startLogin+"+addressObject);
+				messenger.call(messenger.getName(), "startLogin", messenger.tagValue("address", address));
 			}
 			break;
 		
@@ -152,9 +169,9 @@ public class KickController implements KickStatusInterface {
 			 * ログイン処理
 			 */
 		case STATUS_KICK_LOGIN_INIT:
-			execSTATUS_KICK_LOGIN_INIT(exec);
+			execSTATUS_KICK_LOGIN_INIT(message);
 		case STATUS_KICK_LOGIN_PROC:
-			execSTATUS_KICK_LOGIN_PROC(exec);
+			execSTATUS_KICK_LOGIN_PROC(message);
 			break;
 			
 			
@@ -162,7 +179,7 @@ public class KickController implements KickStatusInterface {
 			 * ログインが成功した後の処理、アプリケーションの準備最終フェーズ
 			 */
 		case STATUS_KICK_LOGIN_SUCCEEDED:
-			execSTATUS_KICK_LOGIN_SUCCEEDED(exec);
+			execSTATUS_KICK_LOGIN_SUCCEEDED(message);
 			break;
 			
 			
@@ -172,17 +189,17 @@ public class KickController implements KickStatusInterface {
 			 * channel接続が通った状態
 			 */
 		case STATUS_KICK_LOADING_INIT:
-			execSTATUS_KICK_LOADING_INIT(exec);
+			execSTATUS_KICK_LOADING_INIT(message);
 		case STATUS_KICK_LOADING_PROC:
-			execSTATUS_KICK_LOADING_PROC(exec);
+			execSTATUS_KICK_LOADING_PROC(message);
 			break;
 			
 			
 			
 		case STATUS_KICK_LOADING_USER_INIT:
-			execSTATUS_KICK_LOADING_USER_INIT(exec);
+			execSTATUS_KICK_LOADING_USER_INIT(message);
 		case STATUS_KICK_LOADING_USER_PROC:
-			execSTATUS_KICK_LOADING_USER_PROC(exec);
+			execSTATUS_KICK_LOADING_USER_PROC(message);
 			break;
 		
 
@@ -190,9 +207,9 @@ public class KickController implements KickStatusInterface {
 			 * 自分が所有してるアイテムの情報を取得する
 			 */
 		case STATUS_KICK_OWN_INIT:
-			execSTATUS_KICK_OWN_INIT(exec);
+			execSTATUS_KICK_OWN_INIT(message);
 		case STATUS_KICK_OWN_PROC:
-			execSTATUS_KICK_OWN_PROC(exec);
+			execSTATUS_KICK_OWN_PROC(message);
 			break;
 			
 			
@@ -207,10 +224,10 @@ public class KickController implements KickStatusInterface {
 		
 			
 		case STATUS_KICK_OWNERSVIEW_INIT:
-			executeSTATUS_KICK_OWNERSVIEW_INIT(exec);
+			executeSTATUS_KICK_OWNERSVIEW_INIT(message);
 			
 		case STATUS_KICK_OWNERSVIEW_PROC:
-			executeSTATUS_KICK_OWNERSVIEW_PROC(exec);
+			executeSTATUS_KICK_OWNERSVIEW_PROC(message);
 			break;
 			
 			
@@ -230,14 +247,6 @@ public class KickController implements KickStatusInterface {
 		}
 		
 		
-		
-		//////////チャンネルゾーン
-		/*
-		 * サーバからのPush通信を受け取る部分
-		 */
-		if (exec.startsWith("push+")) {
-			pushController.pushedExecute(exec);
-		}
 		
 		} catch (Exception e) {
 			debug.trace("procedure_error_"+e);
@@ -281,7 +290,7 @@ public class KickController implements KickStatusInterface {
 	
 
 	protected void showLoginWindow(String loginWithURL) {
-		final MyLoginBox diag = new MyLoginBox(this, loginWithURL);
+		final MyLoginBox diag = new MyLoginBox(loginWithURL);
 		diag.show();
 		diag.center();
 	}
@@ -650,28 +659,32 @@ public class KickController implements KickStatusInterface {
 	}
 
 	/**
-	 * ユーザーデータのユーザーキーを設定する。
+	 * ユーザーデータ設定を行う。
+	 * channelIDの文字列を返す。
 	 * @param jsonString
 	 */
-	private void setUpUserKey(String jsonString) {
-		
-		/*
-		 * ユーザーのキーを取得する
-		 */
+	private String setUpUserKey(String result) {
 		JSONObject root = null;
+		
 		JSONObject userData = null;
+		
+		int userImageNumber = -1;
 		JSONArray userItemArray = null;
-		JSONString channelID = null;
+		String channelID = null;
+		
 		try {
-			
-			if (JSONParser.parseStrict(jsonString).isObject() != null) {
-				root = JSONParser.parseStrict(jsonString).isObject();
+			if (JSONParser.parseStrict(result).isObject() != null) {
+				root = JSONParser.parseStrict(result).isObject();
+				debug.trace("root_"+root);
 			}
+			
+			debug.assertTrue(root.get("channelID").isString() != null, "root.get(\"channelID\").isString() = null");
+			debug.assertTrue(root.get("userData").isObject() != null, "root.get(\"userData\").isObject() = null");
+			
 			
 			if (root != null) {
 				if (root.get("channelID").isString() != null) {
-					channelID = root.get("channelID").isString();
-					debug.trace("channelID_"+channelID.stringValue());
+					channelID = root.get("channelID").isString().toString();
 				}
 				
 				if (root.get("userData").isObject() != null) {
@@ -683,54 +696,31 @@ public class KickController implements KickStatusInterface {
 				if (userData.containsKey("itemKeys")) {
 					if (userData.get("itemKeys").isArray() != null) {
 						userItemArray = userData.get("itemKeys").isArray();
+						
 					}
 				}
-
+				
 				
 				if (userData.get("key").isObject() != null) {
-					JSONObject key = userData.get("key").isObject();
-//					debug.trace("key_"+key);
-					uStCont.setUserKey(key);
+					JSONObject userKey = userData.get("key").isObject();
+					uStCont.setUserKey(userKey);
 					
-					int imageNumber = (int)userData.get("imageNumber").isNumber().doubleValue();
-					uStCont.setM_imangeNumber(imageNumber);
+					userImageNumber = (int)userData.get("imageNumber").isNumber().doubleValue();
+					uStCont.setM_imangeNumber(userImageNumber);
+					
+					if (userItemArray != null) {
+						uStCont.setM_userItemArray(userItemArray);
+					}
 				}
 			}
 			
-			
-			/*
-			 * どんな必然があるだろうか。ユーザー名の取得とか、そのへんはまあどうでもいいとして。
-			 */
-//			debug.trace("status_"+uStCont.getUserStatus());
-			debug.trace("name_"+uStCont.getUserName());
-			debug.trace("password_"+uStCont.getUserPass());
-			
-			uStCont.setUserStatus(UserStatusController.STATUS_USER_LOGIN);
-			
-			
-			
-			/*
-			 * 所持アイテムキーの情報をセットする
-			 */
-			if (userItemArray != null) {
-				uStCont.setM_userItemArray(userItemArray);
-			}
-			
-			
-			/*
-			 * ユーザーの用意が終わったので、channelを開く
-			 */
-			if (channelID != null) {
-				setChannelID(channelID.toString());
-			} else {
-				debug.assertTrue(false, "なんらかの理由でchannlelIDが入ってないようです");
-			}
-			
+			return channelID;
 		} catch (Exception e) {
-			debug.trace("エラー隠蔽の可能性がある_"+e);
+			debug.trace("fail to initialize_"+e);
 		}
+		return null;
 	}
-
+	
 	/**
 	 * アイテムリクエストをJsonStringから読み出し行う。
 	 * @param userKey 
@@ -769,12 +759,13 @@ public class KickController implements KickStatusInterface {
 
 			public void onOpen() {
 				debug.trace(uStCont.getUserName()+"_channel 開きました");
-				procedure("SocketOpened");
+				messenger.call(KICK_CONTROLLER, "SocketOpened");
 			}
 			
 			public void onMessage(String encodedData) {
 				//debug.trace(uStCont.getUserName()+"_メッセージを受け取りました_" + encodedData);
-				procedure("push+"+encodedData);
+//				messenger.call(KICK_PUSHCONTROLLER, "push", messenger.tagValue("encodedData", encodedData));
+				pushController.receiveCenter(encodedData);
 			}
 		});
 	}
@@ -788,6 +779,8 @@ public class KickController implements KickStatusInterface {
 	public int getKickStatus () {
 		return m_kickStatus;
 	}
+	
+	
 	
 	/**
 	 * privateで有るべき。
@@ -813,16 +806,7 @@ public class KickController implements KickStatusInterface {
 		uStCont.setUserPass(s);
 	}
 
-	/**
-	 * ログイン
-	 * @param name
-	 * @param pass
-	 */
-	public void login(String name, String pass) {
-		inputUserName(name);
-		inputUserPass(pass);
-		procedure("loginWithURLPath");
-	}
+	
 	
 	
 
@@ -920,28 +904,24 @@ public class KickController implements KickStatusInterface {
 	 * ログイン処理
 	 * @param exec
 	 */
-	private void execSTATUS_KICK_LOGIN_INIT(String exec) {
-		if (exec.startsWith("startLogin+")) {
-			
-			//アドレスに対するチェックを行う。画像以外プレビューに対応したくない。
-			
-			
+	private void execSTATUS_KICK_LOGIN_INIT(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if (exec.equals("startLogin")) {
 			/*
 			 * ログイン画面を出す。
 			 */
-			String imageURL = exec.substring("startLogin+".length(), exec.length());
+			final String address = messenger.getValueForTag(message, "address").isString().toString();
 			
 			
-			JSONObject urlObject = JSONParser.parseStrict(imageURL).isObject();
-			final String urlString = urlObject.get("imageAddress").isString().toString();
-			
-			debug.trace("ログインしたタイミングで、フォーカスしていた画像や物のURLを入力する");
-			uStCont.setM_loginItemPath(urlString);
+			uStCont.setM_loginItemPath(address);
 			
 			
 			Image image = new Image();
-//			image.setUrl(urlString);
-			image.setUrl(Resources.INSTANCE.s1().getURL());
+			
+			image.setUrl(Resources.INSTANCE.s1().getURL());//仮の物体の画像アドレス
+			
+			
 			reg.fireEvent(new ScreenEvent(1, image));//なるほど、全て上書きされる訳だ。この部分を制御できればいいんだな。書き換え部分とそうでない部分の制御を、よりセンシティブに行う必要がある。
 			//ちょうどスクリーンマネージャーの限界だったので、ここら辺で見切るとよかろう。
 			
@@ -949,17 +929,20 @@ public class KickController implements KickStatusInterface {
 				
 				@Override
 				public void onClick(ClickEvent event) {
-					showLoginWindow(urlString);
+					showLoginWindow(address);
 				}
 			});
 			
 			setKickStatus(STATUS_KICK_LOGIN_PROC);
 		}
 	}
-	private void execSTATUS_KICK_LOGIN_PROC(String exec) {
-
-		if (exec.matches("No Match..")) {
+	private void execSTATUS_KICK_LOGIN_PROC(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if (exec.equals("No Match..")) {
 			debug.trace("間違えました");
+			
+			//再表示処理
 		}
 		
 		/*
@@ -968,7 +951,12 @@ public class KickController implements KickStatusInterface {
 		 * ログイン出来なければやり直し、になる。
 		 * どこまでやり直しにさせるかは、サービス次第。
 		 */
-		if (exec.startsWith("loginWithURLPath")) {
+		if (exec.equals("loginWithURLPath")) {
+			
+			
+			inputUserName(messenger.getValueForTag(message, "name").isString().toString());
+			inputUserPass(messenger.getValueForTag(message, "pass").isString().toString());
+			
 			
 			//実行！
 			String nameWithPass = uStCont.getUserName()+":"+uStCont.getUserPass();
@@ -979,6 +967,7 @@ public class KickController implements KickStatusInterface {
 			 */
 			JSONObject itemAddressWithUserKey = new JSONObject();
 			itemAddressWithUserKey.put("itemAddressKey", new JSONString(uStCont.getM_loginItemPath()));
+			
 			
 			uStCont.addRequestToRequestQueue(itemAddressWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADD_ITEM_WITH_URL);
 			//サーバサイドにユーザー名とパスを送る
@@ -991,37 +980,53 @@ public class KickController implements KickStatusInterface {
 				public void onSuccess(String result) {
 					if (result.matches("ログインパスワードが違います")) {//やりなおし
 						setKickStatus(STATUS_KICK_LOGIN_INIT);
-						procedure("No Match..");
+						
+//						procedure("No Match..");
+						messenger.call(KICK_CONTROLLER, "No Match..");
+						
 					} else {
 						setKickStatus(STATUS_KICK_LOGIN_SUCCEEDED);
-						debug.trace("到達");
-						procedure("Channel_Open:"+result);
+						
+						debug.trace("result_"+result);
+						
+						String channelID = setUpUserKey(result);//fail or login
+						
+						debug.trace("channelID_"+channelID);
+						
+						setKickStatus(STATUS_KICK_LOGIN_SUCCEEDED);
+						messenger.call(KICK_CONTROLLER, "ChannelReady", messenger.tagValue("channelID", messenger.removeDoubleQuatation(channelID)));
+						
 					}
 				}
 			}
 			);
 		}
 	}
-	private void execSTATUS_KICK_LOGIN_SUCCEEDED(String exec) {
+	private void execSTATUS_KICK_LOGIN_SUCCEEDED(String message) {
+		String exec = messenger.getCommand(message);
+		
 		/*
 		 * チャンネルの開始、繋ぎ終わってから次のフェーズへ
 		 */
-		if (exec.startsWith("Channel_Open:")) {
-			String jsonString = exec.subSequence("Channel_Open:".length(), exec.length()).toString();
-			pushController = new PushController(this);
-			setUpUserKey(jsonString);//ユーザー情報が整った状態
+		if (exec.equals("ChannelReady")) {
+			pushController = new PushController(this);//こいつの中でユーザーコンテキストを扱うための処理、ほんとはこのとき入れればいいんだと思うんだが。
+			
+			setChannelID(messenger.getValueForTag(message, "channelID").isString().toString());
 		}
 		
-		if (exec.matches("SocketOpened")) {
+		
+		if (exec.equals("SocketOpened")) {
 			procQueExecute(uStCont.getUserKey());//キューを消費する(何が入っているかは知らない)
 			
-			canvasCont = new CanvasController(this,uStCont.getUserKey());
+			
+			canvasCont = new CanvasController(uStCont.getUserKey());
 			canvasCont.initCanvas();
 			
-
+			
 			setKickStatus(STATUS_KICK_LOADING_INIT);//ローディングを行う
 			//ユーザーがログインした時に扱ったアイテムの確認をする
-			procedure("initializeLoading");
+//			procedure("initializeLoading");
+			messenger.call(KICK_CONTROLLER, "initializeLoading");
 		}
 	}
 	
@@ -1034,8 +1039,12 @@ public class KickController implements KickStatusInterface {
 	 * ローディング
 	 * @param exec
 	 */
-	private void execSTATUS_KICK_LOADING_INIT(String exec) {
-		if (exec.startsWith("initializeLoading")) {
+	private void execSTATUS_KICK_LOADING_INIT(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if (exec.equals("initializeLoading")) {
+			
+			debug.trace("initializeLoading_到着");
 			setKickStatus(STATUS_KICK_LOADING_PROC);
 			
 			
@@ -1048,22 +1057,20 @@ public class KickController implements KickStatusInterface {
 		}
 	}
 
-	private void execSTATUS_KICK_LOADING_PROC(String exec) {
+	private void execSTATUS_KICK_LOADING_PROC(String message) {
+		String exec = messenger.getCommand(message);
 		boolean m_enterWithOwn = false;
-		
+		debug.trace("exec_"+exec);
 		{//すでにサーバ上にあった
-			if (exec.startsWith("JoinedAsNewOwner+")) {
-				debug.trace("自分がすでにサーバ上に存在していたあるアイテムについて、新オーナーとして加わった");
-			}
+//			if (exec.startsWith("JoinedAsNewOwner+")) {
+//				debug.trace("自分がすでにサーバ上に存在していたあるアイテムについて、新オーナーとして加わった");
+//			}
 			{
 				//既に自分が持ってた
-				if (exec.startsWith("ItemAlreadyOwn+")) {
+				if (exec.equals("ItemAlreadyOwn")) {
 					debug.trace("アイテムは既に登録されている");
-					String owningItemKey = exec.substring("ItemAlreadyOwn+".length(), exec.length());
-					debug.trace("owningItemKey_"+owningItemKey);
 					
-					JSONObject root = JSONParser.parseStrict(owningItemKey).isObject();
-					
+					JSONObject root = messenger.getValueForTag(message, "root").isObject();
 					
 					//アイテムのキーが手に入っているので、フォーカスにセットする
 					JSONObject focusingItemKey = root.get("requestedItemKey").isObject();
@@ -1075,7 +1082,8 @@ public class KickController implements KickStatusInterface {
 					
 					if (m_enterWithOwn) {
 						setKickStatus(STATUS_KICK_OWN_INIT);
-						procedure("initializeOwning");
+//						procedure("initializeOwning");
+						messenger.call(messenger.getName(), "initializeOwning");
 					} else {
 						//ここで、直接遷移してもいい筈、だが、安易にやると前提がずれて行く。これは厳しいね。フェーズごとのデータ全体の前提がずれていく。
 						//どうすれば担保できる？
@@ -1087,7 +1095,8 @@ public class KickController implements KickStatusInterface {
 						
 						
 						setKickStatus(STATUS_KICK_OWNERSVIEW_INIT);
-						procedure("LoadingOwnersOfItem+"+userKeyWithItemKey);
+//						procedure("LoadingOwnersOfItem+"+userKeyWithItemKey);
+						messenger.call(KICK_CONTROLLER, "LoadingOwnersOfItem", messenger.tagValue("userKeyWithItemKey", userKeyWithItemKey));
 					}
 				}
 			}
@@ -1095,10 +1104,10 @@ public class KickController implements KickStatusInterface {
 		
 		
 		{//アイテムがまだサーバ上に無かった場合
-			if (exec.startsWith("ITEM_ADDED_TO_USER_ItemUpdated+")) {
+			if (exec.equals("ITEM_ADDED_TO_USER_ItemUpdated")) {
 				debug.trace("自分にアイテムが追加されたので、ユーザーデータのアップデートが必要");
-				String dataString = exec.substring("ITEM_ADDED_TO_USER_ItemUpdated+".length(), exec.length());
-				JSONObject root = JSONParser.parseStrict(dataString).isObject();
+				
+				JSONObject root = messenger.getValueForTag(message, "root").isObject();
 				
 				//リクエストを完了させる
 				uStCont.completeRequest(root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString());
@@ -1116,18 +1125,15 @@ public class KickController implements KickStatusInterface {
 				procQueExecute(uStCont.getUserKey());
 			}
 			
-			if (exec.startsWith("ItemFound+")) {//探していたアイテムが見つかり、かつフォーカスしていたものだったら
-				String owningItemKey = exec.substring("ItemFound+".length(), exec.length());
-				debug.trace("アイテムが見つかったよ、つまりもう保存されてるよ_"+owningItemKey);
-				
+			if (exec.equals("ItemFound")) {//探していたアイテムが見つかり、かつフォーカスしていたものだったら
+				JSONObject rootObject = messenger.getValueForTag(message, "root").isObject();
 				//Finish request
-				JSONString id = JSONParser.parseStrict(owningItemKey).isObject().get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
+				JSONString id = rootObject.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
 				uStCont.completeRequest(id);
 				
 				debug.assertTrue(uStCont.getAlreadyFinishedRequestNumber() == uStCont.getAllRequestNumber(), "終わっていないリクエストが存在する");
 				
-				debug.trace("found_owningItemKey_"+owningItemKey);
-				JSONObject requestedItemKey = JSONParser.parseStrict(owningItemKey).isObject().get("requestedItem").isObject().get("key").isObject();
+				JSONObject requestedItemKey = rootObject.get("requestedItem").isObject().get("key").isObject();
 				
 				
 				/*
@@ -1143,9 +1149,10 @@ public class KickController implements KickStatusInterface {
 			}
 			
 			//this is final point of login with add new item and that is first.
-			if (exec.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA)) {
-				String root = exec.substring(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA.length(),exec.length());
-				JSONObject rootObject = JSONParser.parseStrict(root).isObject();
+			if (exec.equals(ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA)) {
+				
+
+				JSONObject rootObject = messenger.getValueForTag(message, ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_MYDATA).isObject();
 				
 				JSONString id = rootObject.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
 				uStCont.completeRequest(id);
@@ -1160,7 +1167,8 @@ public class KickController implements KickStatusInterface {
 				
 				if (m_enterWithOwn) {
 					setKickStatus(STATUS_KICK_OWN_INIT);
-					procedure("initializeOwning");
+//					procedure("initializeOwning");
+					messenger.call(KICK_CONTROLLER, "initializeOwning");
 				} else {
 					JSONObject newRootObject = new JSONObject();
 					newRootObject.put("userKey", uStCont.getUserKey());
@@ -1168,7 +1176,8 @@ public class KickController implements KickStatusInterface {
 					
 					
 					setKickStatus(STATUS_KICK_OWNERSVIEW_INIT);
-					procedure("LoadingOwnersOfItem+"+newRootObject);
+//					procedure("LoadingOwnersOfItem+"+newRootObject);
+					messenger.call(KICK_CONTROLLER, "LoadingOwnersOfItem", messenger.tagValue("newRootObject", newRootObject));
 				}
 			}
 		}
@@ -1198,8 +1207,10 @@ public class KickController implements KickStatusInterface {
 	/**
 	 * 所持アイテム
 	 */
-	private void execSTATUS_KICK_OWN_INIT(String exec) {
-		if(exec.startsWith("initializeOwning")) {
+	private void execSTATUS_KICK_OWN_INIT(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if(exec.equals("initializeOwning")) {
 			setKickStatus(STATUS_KICK_OWN_PROC);
 			
 			//この時点での所持アイテムのキーから、アイテムの情報を召還。　全てを描画対象にする
@@ -1216,14 +1227,14 @@ public class KickController implements KickStatusInterface {
 		
 		
 	}
-	private void execSTATUS_KICK_OWN_PROC(String exec) {
+	private void execSTATUS_KICK_OWN_PROC(String message) {
+		String exec = messenger.getCommand(message);
 		{//アイテムが送られてきた
-			if (exec.startsWith("ItemReceived+")) {
-				String rootString = exec.substring("ItemReceived+".length(), exec.length());
-				debug.trace("rootString_"+rootString);
+			if (exec.equals("ItemReceived")) {
+				
 				
 				try {
-					JSONObject root = JSONParser.parseStrict(rootString).isObject();
+					JSONObject root = messenger.getValueForTag(message, "root").isObject();
 					JSONObject item = root.get("item").isObject();
 					JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
 	
@@ -1259,36 +1270,35 @@ public class KickController implements KickStatusInterface {
 
 		
 		{//タグ関連
-			if (exec.startsWith("TagTapped+")) {
-				String key = exec.substring("TagTapped+".length(),  exec.length());
-				debug.trace("TagTapped_key_"+key);
-				JSONObject root = JSONParser.parseStrict(key).isObject();
+			if (exec.equals("TagTapped")) {
+				
+
+				JSONObject root = messenger.getValueForTag(message, "buttonKey").isObject();
 				
 				
-				uStCont.addRequestToRequestQueue(key.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_TAG);
+				uStCont.addRequestToRequestQueue(root.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_UPDATE_TAG);
 				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
 			}
 			
 			
-			if (exec.startsWith("TagUpload+")) {
+			if (exec.equals("TagUpload")) {
 				//アイテムのキーと加算したタグの内容と加算した主のキーの合算をサーバに渡す
 				//そしたらサーバ側で、タグ情報が構築され、そのタグのキーがアイテムに追加される
 				
-				String key = exec.substring("TagUpload+".length(),  exec.length());
 				
-				JSONObject itemKeyWithNewTagWithMyKey = JSONParser.parseStrict(key).isObject();
+				JSONObject itemKeyWithNewTagWithMyKey = messenger.getValueForTag(message, "itemKeyWithNewTag").isObject();
+				
 				itemKeyWithNewTagWithMyKey.put("userKey", uStCont.getUserKey());
 				
 				uStCont.addRequestToRequestQueue(itemKeyWithNewTagWithMyKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG);
 				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
 			}
 			
-			if (exec.startsWith(ClientSideRequestQueueModel.EVENT_TAG_CREATED)) {
+			if (exec.equals(ClientSideRequestQueueModel.EVENT_TAG_CREATED)) {
 				
-				String root = exec.substring(ClientSideRequestQueueModel.EVENT_TAG_CREATED.length(),  exec.length());
-				debug.trace("タグが作成されました_"+root);
 				
-				JSONObject rootObject = JSONParser.parseStrict(root).isObject();
+				JSONObject rootObject = messenger.getValueForTag(message, ClientSideRequestQueueModel.EVENT_TAG_CREATED).isObject();
+				
 				uStCont.setM_tagMapModel(
 						rootObject.get("itemName").isString().toString(), 
 						rootObject.get("tagObject").isObject()
@@ -1303,16 +1313,16 @@ public class KickController implements KickStatusInterface {
 				showItems();
 			}
 			
-			if (exec.startsWith(ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED)) {
+			if (exec.equals(ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED)) {
 				/*
 				 * このアイテムについてのユーザーのタグのアレイを受け取ったので、表示に反映する
 				 */
-				String root = exec.substring(ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED.length(),  exec.length());
+				
 				/*
 				 * itemName
 				 * tagObject
 				 */
-				JSONObject rootObject = JSONParser.parseStrict(root).isObject();
+				JSONObject rootObject = messenger.getValueForTag(message, ClientSideRequestQueueModel.EVENT_USER_TAG_RECEIVED).isObject();
 				uStCont.setM_tagMapModel(
 						rootObject.get("itemName").isString().toString(), 
 						rootObject.get("tagObject").isObject()
@@ -1327,23 +1337,23 @@ public class KickController implements KickStatusInterface {
 			 * どのアイテムがタッチされたかで、タッチされたアイテムのキーから
 			 * そのアイテムに寄せられたコメント一覧へとジャンプする
 			 */
-			if (exec.startsWith("ItemTapped+")) {
+			if (exec.equals("ItemTapped")) {
+				
 				setKickStatus(STATUS_KICK_OWNERSVIEW_INIT);
 				//ロードするアイテムのキーを受け取り、コメントの情報を表示する
-				String tappedItemKey = exec.substring("ItemTapped+".length(),  exec.length());
-				debug.trace("tappedItemKey_"+tappedItemKey);
 				
 
 				HTML loaingMessage = new HTML(uStCont.getUserName()+"@Loading Comments...");
 				reg.fireEvent(new ScreenEvent(1, loaingMessage));
 				
-				JSONObject tappedItemKeyObject = JSONParser.parseStrict(tappedItemKey).isObject();
+				JSONObject tappedItemKeyObject = messenger.getValueForTag(message, "itemKey").isObject();
 				
 				JSONObject root = new JSONObject();
 				root.put("userKey", tappedItemKeyObject.get("userKey").isObject());
 				root.put("itemKey", tappedItemKeyObject.get("itemKey").isObject());
 				
-				procedure("LoadingOwnersOfItem+"+root);
+//				procedure("LoadingOwnersOfItem+"+root);
+				messenger.call(KICK_CONTROLLER, "LoadingOwnersOfItem", messenger.tagValue("root", root));
 				hideUserTag();
 			}
 		}
@@ -1366,8 +1376,11 @@ public class KickController implements KickStatusInterface {
 	 * 
 	 * @param exec
 	 */
-	private void execSTATUS_KICK_LOADING_USER_INIT(String exec) {
-		if (exec.startsWith("InitializeFromUserTapped+")) {
+	private void execSTATUS_KICK_LOADING_USER_INIT(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if (exec.equals("InitializeFromUserTapped")) {
+			debug.assertTrue(false, "未調整_InitializeFromUserTapped");
 			debug.trace("別人かどうか判断しない、ユーザー情報の読み出し開始_"+exec);
 			//このユーザーの情報を取得、持ち物一覧と、持ち物に着いているタグ一覧を取得する
 			uStCont.addRequestToRequestQueue(exec, ClientSideRequestQueueModel.REQUEST_TYPE_GET_SPECIFIC_USER_INFORMATION);
@@ -1385,7 +1398,7 @@ public class KickController implements KickStatusInterface {
 		
 	}
 	
-	private void execSTATUS_KICK_LOADING_USER_PROC(String exec) {
+	private void execSTATUS_KICK_LOADING_USER_PROC(String message) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -1409,203 +1422,203 @@ public class KickController implements KickStatusInterface {
 	 * @param exec
 	 */
 	private void executeSTATUS_KICK_OWNERS_INIT(String exec) {
-		/*
-		 * アイテムキーを指定してのオーナーズの初期化
-		 */
-		if (exec.startsWith("LoadingOwnersOfItem+")) {
-			
-			setKickStatus(STATUS_KICK_OWNERS_PROC);
-			
-			debug.assertTrue(uStCont.getM_nowFocusingItemKey() != null, "getM_nowFocusingItemKeyが空");
-			String itemKeyWithUserKey = exec.substring("LoadingOwnersOfItem+".length(), exec.length());
-			
-			//全コメントを召還する
-			JSONObject root = null;
-			try {
-				//{"itemKey":{"kind":"item", "id":0, "name":"\"http://images.paraorkut.com/img/funnypics/images/f/fail_cat-12835.jpg\""}, "userKey":{"kind":"user", "id":0, "name":"aaaa@aaaa"}}
-				root = JSONParser.parseStrict(itemKeyWithUserKey).isObject();
-				JSONObject userKey = root.get("userKey").isObject();
-				JSONObject itemKey = root.get("itemKey").isObject();
-				
-				debug.assertTrue(userKey.get("name").equals(uStCont.getUserKey().get("name")), "ユーザーの名称が一致しない");
-				uStCont.setM_nowFocusingItemKey(itemKey);//フォーカスをセットする
-			} catch (Exception e) {
-				debug.trace("LoadingOwnersOfI_error_"+e);
-			}
-			uStCont.addRequestToRequestQueue(root.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
-			
-			
-			//アイテムデータ自体も召還する
-			JSONObject itemRequestKey = new JSONObject();
-			itemRequestKey.put("userKey", uStCont.getUserKey());
-			itemRequestKey.put("itemKey", uStCont.getM_nowFocusingItemKey());//ココは、アイテムのキー
-			uStCont.addRequestToRequestQueue(itemRequestKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_KEY);
-			
-			
-			debug.assertTrue(uStCont.getM_nowFocusingItemKey() != null, "uStCont.getM_nowFocusingItemKeyの初期化が終わってない");
-			itemCommentCont = new ItemCommentController(this, uStCont.getUserKey(), uStCont.getM_nowFocusingItemKey());//コメントコントローラの初期化
-			
-			
-			//For All window, タグ情報を取得する
-			JSONObject request = new JSONObject();
-			request.put("userInfo", uStCont.getUserKey());
-			request.put("itemInfo", uStCont.getM_nowFocusingItemKey());
-			uStCont.addRequestToRequestQueue(request.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG);
-			
-			
-			procQueExecute(uStCont.getUserKey());//do
-			
-			HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
-			reg.fireEvent(new ScreenEvent(1, ownersOfItem));
-		}
-		
+//		/*
+//		 * アイテムキーを指定してのオーナーズの初期化
+//		 */
+//		if (exec.startsWith("LoadingOwnersOfItem+")) {
+//			
+//			setKickStatus(STATUS_KICK_OWNERS_PROC);
+//			
+//			debug.assertTrue(uStCont.getM_nowFocusingItemKey() != null, "getM_nowFocusingItemKeyが空");
+//			String itemKeyWithUserKey = exec.substring("LoadingOwnersOfItem+".length(), exec.length());
+//			
+//			//全コメントを召還する
+//			JSONObject root = null;
+//			try {
+//				//{"itemKey":{"kind":"item", "id":0, "name":"\"http://images.paraorkut.com/img/funnypics/images/f/fail_cat-12835.jpg\""}, "userKey":{"kind":"user", "id":0, "name":"aaaa@aaaa"}}
+//				root = JSONParser.parseStrict(itemKeyWithUserKey).isObject();
+//				JSONObject userKey = root.get("userKey").isObject();
+//				JSONObject itemKey = root.get("itemKey").isObject();
+//				
+//				debug.assertTrue(userKey.get("name").equals(uStCont.getUserKey().get("name")), "ユーザーの名称が一致しない");
+//				uStCont.setM_nowFocusingItemKey(itemKey);//フォーカスをセットする
+//			} catch (Exception e) {
+//				debug.trace("LoadingOwnersOfI_error_"+e);
+//			}
+//			uStCont.addRequestToRequestQueue(root.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GETALLCOMMENT);
+//			
+//			
+//			//アイテムデータ自体も召還する
+//			JSONObject itemRequestKey = new JSONObject();
+//			itemRequestKey.put("userKey", uStCont.getUserKey());
+//			itemRequestKey.put("itemKey", uStCont.getM_nowFocusingItemKey());//ココは、アイテムのキー
+//			uStCont.addRequestToRequestQueue(itemRequestKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_ITEM_FROM_KEY);
+//			
+//			
+//			debug.assertTrue(uStCont.getM_nowFocusingItemKey() != null, "uStCont.getM_nowFocusingItemKeyの初期化が終わってない");
+//			itemCommentCont = new ItemCommentController(this, uStCont.getUserKey(), uStCont.getM_nowFocusingItemKey());//コメントコントローラの初期化
+//			
+//			
+//			//For All window, タグ情報を取得する
+//			JSONObject request = new JSONObject();
+//			request.put("userInfo", uStCont.getUserKey());
+//			request.put("itemInfo", uStCont.getM_nowFocusingItemKey());
+//			uStCont.addRequestToRequestQueue(request.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG);
+//			
+//			
+//			procQueExecute(uStCont.getUserKey());//do
+//			
+//			HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
+//			reg.fireEvent(new ScreenEvent(1, ownersOfItem));
+//		}
+//		
 	}
 	private void executeSTATUS_KICK_OWNERS_PROC(String exec) {
-		{//タグ関連
-//			if (exec.startsWith("TagUpload+")) {
-//				//アイテムのキーと加算したタグの内容と加算した主のキーの合算をサーバに渡す
-//				//そしたらサーバ側で、タグ情報が構築され、そのタグのキーがアイテムに追加される
+//		{//タグ関連
+////			if (exec.startsWith("TagUpload+")) {
+////				//アイテムのキーと加算したタグの内容と加算した主のキーの合算をサーバに渡す
+////				//そしたらサーバ側で、タグ情報が構築され、そのタグのキーがアイテムに追加される
+////				
+////				String key = exec.substring("TagUpload+".length(),  exec.length());
+////				
+////				JSONObject itemKeyWithNewTagWithMyKey = JSONParser.parseStrict(key).isObject();
+////				itemKeyWithNewTagWithMyKey.put("userKey", uStCont.getUserKey());
+////				
+////				uStCont.addRequestToRequestQueue(itemKeyWithNewTagWithMyKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG);
+////				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+////			}
+////			
+////			if (exec.startsWith("tagUpdated+")) {
+////				String execution = exec.substring("tagUpdated+".length(),  exec.length());
+////				
+////				debug.trace("タグがアップデートされました_"+execution);
+////				String key = exec.substring("TagUpload+".length(),  exec.length());
+////			}
+//			if (exec.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
+//				String rootString = exec.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG.length(), exec.length());
 //				
-//				String key = exec.substring("TagUpload+".length(),  exec.length());
+//				debug.trace("tagRceive_start"+rootString);
+//				//誰のタグなのか。内容はなんなのか、がはいってる筈。
 //				
-//				JSONObject itemKeyWithNewTagWithMyKey = JSONParser.parseStrict(key).isObject();
-//				itemKeyWithNewTagWithMyKey.put("userKey", uStCont.getUserKey());
+//				JSONObject rootObject = JSONParser.parseStrict(rootString).isObject();
 //				
-//				uStCont.addRequestToRequestQueue(itemKeyWithNewTagWithMyKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDNEWTAG);
-//				procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+//				JSONObject tagOwnerObject = rootObject.get("ownerObject").isObject();
+//				JSONObject tagObject = rootObject.get("tagObject").isObject();
+//				itemCommentCont.addTagForUser(tagOwnerObject, tagObject);
+//				
 //			}
+//		}
+//		
+//		//アイテムの受け取り(アイテム情報を出す為に必要)
+//		{
+//			if (exec.startsWith("ItemReceived+")) {
+//				String rootString = exec.substring("ItemReceived+".length(), exec.length());
+//				debug.trace("rootString_"+rootString);
+//				
+//				try {
+//					JSONObject root = JSONParser.parseStrict(rootString).isObject();
+//					JSONObject item = root.get("item").isObject();
+//					JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
+//	
+//					debug.trace("execSTATUS_KICK_OWN_PROC_PUSH_ITEM2_item_"+item);
+//					
+//					if (item != null) {
+//						//アイテムのidキーから、設定されていたリクエストを完了に指定する
+//						
+//						uStCont.putItemData(item);//pushしてきてもらったデータ、現在のアカウントのキャッシュに保存する。
+//						uStCont.completeRequest(id);
+//						
+//						showOneItem(uStCont.getM_nowFocusingItemKey());
+//					}
+//				} catch (Exception e) {
+//					debug.trace("PUSH_ITEM2_error_"+e);
+//				}
+//				
+//				HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
+//				reg.fireEvent(new ScreenEvent(1, ownersOfItem));
+//			}
+//		}
+//		
+//		
+//		if (exec.startsWith("GETCOMMENT_ACCEPTED")) {
+//			String rootString = exec.substring("GETCOMMENT_ACCEPTED".length(), exec.length());
 //			
-//			if (exec.startsWith("tagUpdated+")) {
-//				String execution = exec.substring("tagUpdated+".length(),  exec.length());
-//				
-//				debug.trace("タグがアップデートされました_"+execution);
-//				String key = exec.substring("TagUpload+".length(),  exec.length());
-//			}
-			if (exec.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
-				String rootString = exec.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG.length(), exec.length());
-				
-				debug.trace("tagRceive_start"+rootString);
-				//誰のタグなのか。内容はなんなのか、がはいってる筈。
-				
-				JSONObject rootObject = JSONParser.parseStrict(rootString).isObject();
-				
-				JSONObject tagOwnerObject = rootObject.get("ownerObject").isObject();
-				JSONObject tagObject = rootObject.get("tagObject").isObject();
-				itemCommentCont.addTagForUser(tagOwnerObject, tagObject);
-				
-			}
-		}
-		
-		//アイテムの受け取り(アイテム情報を出す為に必要)
-		{
-			if (exec.startsWith("ItemReceived+")) {
-				String rootString = exec.substring("ItemReceived+".length(), exec.length());
-				debug.trace("rootString_"+rootString);
-				
-				try {
-					JSONObject root = JSONParser.parseStrict(rootString).isObject();
-					JSONObject item = root.get("item").isObject();
-					JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
-	
-					debug.trace("execSTATUS_KICK_OWN_PROC_PUSH_ITEM2_item_"+item);
-					
-					if (item != null) {
-						//アイテムのidキーから、設定されていたリクエストを完了に指定する
-						
-						uStCont.putItemData(item);//pushしてきてもらったデータ、現在のアカウントのキャッシュに保存する。
-						uStCont.completeRequest(id);
-						
-						showOneItem(uStCont.getM_nowFocusingItemKey());
-					}
-				} catch (Exception e) {
-					debug.trace("PUSH_ITEM2_error_"+e);
-				}
-				
-				HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
-				reg.fireEvent(new ScreenEvent(1, ownersOfItem));
-			}
-		}
-		
-		
-		if (exec.startsWith("GETCOMMENT_ACCEPTED")) {
-			String rootString = exec.substring("GETCOMMENT_ACCEPTED".length(), exec.length());
-			
-			JSONObject root = JSONParser.parseStrict(rootString).isObject();
-			JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
-
-			uStCont.completeRequest(id);
-			
-			HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
-			reg.fireEvent(new ScreenEvent(1, ownersOfItem));
-		}
-		
-		
-		if (exec.startsWith("InputYourText+")) {
-			String textInput = exec.substring("InputYourText+".length(), exec.length());
-			
-			debug.trace("コメント入力が有りました_"+textInput);
-			JSONObject commentWithItemKeyWithUserKey = JSONParser.parseLenient(textInput).isObject();
-			debug.trace("commentWithItemKeyWithUserKey_"+commentWithItemKeyWithUserKey);
-			
-//			commentWithItemKeyWithUserKey.put("userKey", uStCont.getUserKey());//これが原因でペアが消滅するとか、前も見た事が、、
-//			commentWithItemKeyWithUserKey.put("itemKey", uStCont.getM_nowFocusingItemKey());//足したが、元来いらないくさい。
-			
-			uStCont.addRequestToRequestQueue(commentWithItemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
-			
-			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
-		}
-		
-		
-		if (exec.startsWith("NoComment+")) {
-			debug.trace("自分のコメントが無いので、ウインドウを出す。");
-			itemCommentCont.addMyCommentPopup();
-		}
-		
-		
-		if (exec.startsWith("MyCommentGet+")) {//自分からのコメント
-			itemCommentCont.removeMyYetPanel(uStCont.getUserName());
-			
-			String commentData = exec.substring("MyCommentGet+".length(), exec.length());
-			
-			JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
-			debug.trace("imageNumber_commentBlock_"+commentBlock);
-			
-			itemCommentCont.addCommentFromMyself(commentBlock);
-		}
-		
-		if (exec.startsWith("SomeCommentGet+")) {//他人からのコメント
-			debug.trace("だれかからのコメントが来た_自分は_"+uStCont.getUserName());
-			String commentData = exec.substring("SomeCommentGet+".length(), exec.length());
-			
-			JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
-			itemCommentCont.addCommentFromSomeone(commentBlock);
-			
-		}
-		
-		if (exec.startsWith("CommentSaved+")) {
-			String commentSavedRequest = exec.substring("CommentSaved+".length(), exec.length());
-			debug.trace("コメントのセーブを受け取ったので、リロードする_"+commentSavedRequest);
-			//アイテムのキーを出力して、読み出す
-			JSONObject value = JSONParser.parseStrict(commentSavedRequest).isObject();
-			JSONObject itemKey = new JSONObject();
-			itemKey.put("itemKey", value);
-			itemKey.put("userKey", uStCont.getUserKey());
-			
-			uStCont.addRequestToRequestQueue(itemKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT);
-			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
-		}
-		
-		/*
-		 * アイテムがタッチされたら、その所有者一覧へ
-		 */
-		if (exec.startsWith("ItemTapped+")) {
-			setKickStatus(STATUS_KICK_OWN_INIT);
-			
-			itemCommentCont.eraseAllComment();
-//			debug.assertTrue(false, "調整中");
-			debug.trace("exec_"+exec);
-			showUserTag();
-		}
+//			JSONObject root = JSONParser.parseStrict(rootString).isObject();
+//			JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
+//
+//			uStCont.completeRequest(id);
+//			
+//			HTML ownersOfItem = new HTML(uStCont.getUserName()+"@There are owners of this item Loading..."+uStCont.getAlreadyFinishedRequestNumber()+"/"+uStCont.getAllRequestNumber());
+//			reg.fireEvent(new ScreenEvent(1, ownersOfItem));
+//		}
+//		
+//		
+//		if (exec.startsWith("InputYourText+")) {
+//			String textInput = exec.substring("InputYourText+".length(), exec.length());
+//			
+//			debug.trace("コメント入力が有りました_"+textInput);
+//			JSONObject commentWithItemKeyWithUserKey = JSONParser.parseLenient(textInput).isObject();
+//			debug.trace("commentWithItemKeyWithUserKey_"+commentWithItemKeyWithUserKey);
+//			
+////			commentWithItemKeyWithUserKey.put("userKey", uStCont.getUserKey());//これが原因でペアが消滅するとか、前も見た事が、、
+////			commentWithItemKeyWithUserKey.put("itemKey", uStCont.getM_nowFocusingItemKey());//足したが、元来いらないくさい。
+//			
+//			uStCont.addRequestToRequestQueue(commentWithItemKeyWithUserKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_ADDCOMMENT);
+//			
+//			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+//		}
+//		
+//		
+//		if (exec.startsWith("NoComment+")) {
+//			debug.trace("自分のコメントが無いので、ウインドウを出す。");
+//			itemCommentCont.addMyCommentPopup();
+//		}
+//		
+//		
+//		if (exec.startsWith("MyCommentGet+")) {//自分からのコメント
+//			itemCommentCont.removeMyYetPanel(uStCont.getUserName());
+//			
+//			String commentData = exec.substring("MyCommentGet+".length(), exec.length());
+//			
+//			JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
+//			debug.trace("imageNumber_commentBlock_"+commentBlock);
+//			
+//			itemCommentCont.addCommentFromMyself(commentBlock);
+//		}
+//		
+//		if (exec.startsWith("SomeCommentGet+")) {//他人からのコメント
+//			debug.trace("だれかからのコメントが来た_自分は_"+uStCont.getUserName());
+//			String commentData = exec.substring("SomeCommentGet+".length(), exec.length());
+//			
+//			JSONObject commentBlock = JSONParser.parseStrict(commentData).isObject();
+//			itemCommentCont.addCommentFromSomeone(commentBlock);
+//			
+//		}
+//		
+//		if (exec.startsWith("CommentSaved+")) {
+//			String commentSavedRequest = exec.substring("CommentSaved+".length(), exec.length());
+//			debug.trace("コメントのセーブを受け取ったので、リロードする_"+commentSavedRequest);
+//			//アイテムのキーを出力して、読み出す
+//			JSONObject value = JSONParser.parseStrict(commentSavedRequest).isObject();
+//			JSONObject itemKey = new JSONObject();
+//			itemKey.put("itemKey", value);
+//			itemKey.put("userKey", uStCont.getUserKey());
+//			
+//			uStCont.addRequestToRequestQueue(itemKey.toString(), ClientSideRequestQueueModel.REQUEST_TYPE_GET_LATESTCOMMENT);
+//			procQueExecute(uStCont.getUserKey());//サーバにリクエストを送りこむ
+//		}
+//		
+//		/*
+//		 * アイテムがタッチされたら、その所有者一覧へ
+//		 */
+//		if (exec.startsWith("ItemTapped+")) {
+//			setKickStatus(STATUS_KICK_OWN_INIT);
+//			
+//			itemCommentCont.eraseAllComment();
+////			debug.assertTrue(false, "調整中");
+//			debug.trace("exec_"+exec);
+//			showUserTag();
+//		}
 	}
 
 	
@@ -1622,24 +1635,21 @@ public class KickController implements KickStatusInterface {
 	
 
 
-	private void executeSTATUS_KICK_OWNERSVIEW_INIT(String exec) {
-//		procedure("LoadingOwnersOfItem+"+userKeyWithItemKey);
-		if (exec.startsWith("LoadingOwnersOfItem+")) {
+	private void executeSTATUS_KICK_OWNERSVIEW_INIT(String message) {
+		String exec = messenger.getCommand(message);
+		
+		if (exec.equals("LoadingOwnersOfItem")) {
 			//このキーで、GET_ALL_USER_COMMENT_TO_ITEMリクエストを実行します。このリクエストの完了を持って、ビューの初期化を完了させます
-			String root = exec.substring("LoadingOwnersOfItem+".length(), exec.length());
-			
-			
-			
-			JSONObject rootRequest = JSONParser.parseStrict(root).isObject();
+			JSONObject rootRequest = messenger.getValueForTag(message, "userKeyWithItemKey").isObject();
 			debug.trace("rootRequest_"+rootRequest);
 			
 			uStCont.addRequestToRequestQueue(rootRequest.toString(),  ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM);
 			procQueExecute(uStCont.getUserKey());
 		}
-		if (exec.startsWith(ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM)) {
-			String rootString = exec.substring(ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM.length(), exec.length());
+		if (exec.equals(ClientSideRequestQueueModel.GET_ALL_USER_WHO_HAVE_THIS_ITEM)) {
+			JSONObject rootOject = messenger.getValueForTag(message, "root").isObject();
+			debug.trace("なんか、入ってないんだってその後どう？");
 			
-			JSONObject rootOject = JSONParser.parseStrict(rootString).isObject();
 			debug.trace("rootOject_"+rootOject);
 			JSONArray ownerList = rootOject.get("ownerList").isArray();
 			debug.trace("ownerList_"+ownerList);
@@ -1649,7 +1659,9 @@ public class KickController implements KickStatusInterface {
 			//リクエストの完了
 			uStCont.completeRequest(rootOject.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString());
 			
-			oVCont = new OwnersViewController(this);
+			//コントローラーの初期化
+			oVCont = new OwnersViewController();
+			
 			//ユーザーのリストが手に入ったので、それをもって、画面の初期化を行う
 			if (0 < ownerList.size()) {
 				
@@ -1683,15 +1695,16 @@ public class KickController implements KickStatusInterface {
 		
 		
 	}
-	private void executeSTATUS_KICK_OWNERSVIEW_PROC(String exec) {
+	private void executeSTATUS_KICK_OWNERSVIEW_PROC(String message) {
+		String exec = messenger.getCommand(message);
+		
 		//アイテムの受け取り(アイテム情報を出す為に必要)
 		{
-			if (exec.startsWith("ItemReceived+")) {
-				String rootString = exec.substring("ItemReceived+".length(), exec.length());
-				debug.trace("rootString_"+rootString);
+			if (exec.equals("ItemReceived")) {
 				
+
 				try {
-					JSONObject root = JSONParser.parseStrict(rootString).isObject();
+					JSONObject root = messenger.getValueForTag(message, "root").isObject();
 					JSONObject item = root.get("item").isObject();
 					JSONString id = root.get(ClientSideRequestQueueModel.KEY_STRING_TRIGGER_ID).isString();
 	
@@ -1714,46 +1727,53 @@ public class KickController implements KickStatusInterface {
 			}
 		}
 		
-		if (exec.startsWith("OwnerImageTapped+")) {
+		if (exec.equals("OwnerImageTapped")) {
+			
 			debug.trace("execイメージが押された_"+exec);
 			/*
 			 * とあるユーザーの画像が押された
 			 * -ユーザーのホーム画面に移動する
 			 * →情報取得して遷移
 			 */
+			JSONString userName = messenger.getValueForTag(message, "userName").isString();
+			
 			JSONObject root = new JSONObject();
-			root.put("userNameWithKey", new JSONString(exec));
+			root.put("userNameWithKey", userName);
 			
 			setKickStatus(STATUS_KICK_LOADING_USER_INIT);//ユーザー情報の取得と、そのオウンリストの表示に走る
-			procedure("InitializeFromUserTapped+"+root);
+//			procedure("InitializeFromUserTapped+"+root);
+			messenger.call(KICK_CONTROLLER, "InitializeFromUserTapped", messenger.tagValue("root", root));
 		}
-		if (exec.startsWith("TagButtonTapped+")) {
-			debug.trace("execボタンが押された"+exec);
+		if (exec.equals("TagButtonTapped")) {
+			String userName = messenger.getValueForTag(message, "userName").isString().toString();
+			
+			debug.trace("userNameさんのタグボタンが押された"+userName);
 			/*
 			 * 自分の画面で、自分/誰かのタグを押した
 			 * -タグの種類の縛りが必要
 			 * -同じタグを押した人の一覧を取得、表示する
+			 * っていう画面に遷移する。
+			 * 
+			 * つまりユーザーの画面に行くんだね。
 			 */
-			
 		}
 		
-		if (exec.startsWith("notyet")) {
+		if (exec.equals("notyet")) {
 			/*
 			 * -アイテムボタンを押すと、フォーカスを切り替え、そのページへとジャンプする
 			 * 
 			 */
+			
 		}
-		if (exec.startsWith("CommentWritten+")) {
-			debug.trace("コメント入力が来た_"+exec);
+		if (exec.equals("CommentWritten")) {
+			JSONObject root = messenger.getValueForTag(message, "commentWithUserKey").isObject();
+			debug.trace("コメント入力が来た_"+root);
 		}
 		
-		if (exec.startsWith(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
-			String rootString = exec.substring(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG.length(), exec.length());
-			
-			debug.trace("tagRceive_start"+rootString);
+		if (exec.equals(ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG)) {
 			//誰のタグなのか。内容はなんなのか、がはいってる筈。
 			
-			JSONObject rootObject = JSONParser.parseStrict(rootString).isObject();
+			JSONObject rootObject = messenger.getValueForTag(message, ClientSideRequestQueueModel.REQUEST_TYPE_GET_USER_INDIVIDUAL_TAG).isObject();
 			
 			JSONObject tagOwnerObject = rootObject.get("ownerObject").isObject();
 			JSONObject tagObject = rootObject.get("tagObject").isObject();
@@ -1768,13 +1788,14 @@ public class KickController implements KickStatusInterface {
 		/*
 		 * アイテムがタッチされたら、その所有者一覧へ
 		 */
-		if (exec.startsWith("ItemTapped+")) {
+		if (exec.equals("ItemTapped")) {
+			debug.assertTrue(false, "アイテムがタップされたんだけど、遷移先はこのアイテムについて所有してる人たちじゃないの?");
 			setKickStatus(STATUS_KICK_OWN_INIT);
 			
 			debug.trace("exec_"+exec);
 //			showUserTag();
 		}
-	}	
+	}
 		
 }
 

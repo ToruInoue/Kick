@@ -1,9 +1,13 @@
 package com.kissaki.client;
 
+import com.kissaki.client.MessengerGWTCore.MessengerGWTImplement;
+import com.kissaki.client.MessengerGWTCore.MessengerGWTInterface;
+import com.kissaki.client.MessengerGWTCore.MessageCenter.MessageReceivedEvent;
+import com.kissaki.client.MessengerGWTCore.MessageCenter.MessageReceivedEventHandler;
 import com.kissaki.client.channel.Channel;
 import com.kissaki.client.channel.ChannelFactory;
 import com.kissaki.client.channel.SocketListener;
-import com.kissaki.client.messengerSystem.MessengerSystem;
+
 import com.kissaki.client.subFrame.debug.Debug;
 import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 
@@ -11,6 +15,7 @@ import com.kissaki.client.subFrame.screen.ScreenEventRegister;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.widgetideas.graphics.client.Color;
 import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
@@ -18,7 +23,7 @@ import com.google.gwt.widgetideas.graphics.client.GWTCanvas;
 /**
  * Entry point classes define <code>onModuleLoad()</code>.
  */
-public class Kick implements EntryPoint {
+public class Kick implements EntryPoint, MessageReceivedEventHandler {
 	Debug debug;
 	ProcessingImplements p;
 
@@ -42,14 +47,14 @@ public class Kick implements EntryPoint {
 	 * This is the entry point method.
 	 */
 	public void onModuleLoad() {
-		
-		if (false) {
+		debug = new Debug(this);
+		if (true) {
 			kCont = new KickController();
 			return;
 		}
 		if (false) {
 		
-		debug = new Debug(this);
+		
 		
 		GWTCanvas canvas = new GWTCanvas(0,0,600,280);
 		ScreenEventRegister reg = new ScreenEventRegister(canvas);
@@ -86,7 +91,9 @@ public class Kick implements EntryPoint {
 		}
 		);
 	}
-		MessengerSystem messenger = new MessengerSystem();
+		MessengerGWTImplement messenger = new MessengerGWTImplement("myself", this);
+		messenger.call(messenger.getName(), "command", messenger.tagValue("キーと", "バリューです"));
+		
 		
 		
 		return;
@@ -174,6 +181,14 @@ public class Kick implements EntryPoint {
 			
 		});
 	}
+
+	@Override
+	public void onMessageReceived(MessageReceivedEvent event) {
+		Window.alert("event_"+event);
+	}
+
+	
+
 
 
 

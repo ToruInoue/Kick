@@ -6,7 +6,6 @@ import com.google.gwt.event.dom.client.KeyDownEvent;
 import com.google.gwt.event.dom.client.KeyDownHandler;
 import com.google.gwt.user.client.ui.TextBox;
 import com.kissaki.client.KickController;
-import com.kissaki.client.messengerSystem.MessengerSystem;
 import com.kissaki.client.subFrame.debug.Debug;
 
 public class TestTextEvent_Entered {
